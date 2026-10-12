@@ -1,0 +1,103 @@
+/*
+	ios-fixes.css — iPhone / iOS layer for Cookie Clicker (loaded after the game's own styles).
+	No visual redesign: only touch behaviour, safe area background and scroll containment.
+*/
+
+/* --- page never scrolls, bounces or zooms ------------------------------------------ */
+html,
+body
+{
+	touch-action: manipulation;          /* WebKit: disables double-tap zoom, taps dispatch immediately */
+	overscroll-behavior: none;           /* no rubber-band of the whole app */
+	-webkit-text-size-adjust: 100%;      /* no font inflation after rotation */
+	text-size-adjust: 100%;
+	-webkit-tap-highlight-color: transparent;
+}
+html
+{
+	background: #000;                    /* shows behind the safe-area margins */
+	height: 100%;
+	overflow: hidden;
+}
+body
+{
+	position: fixed;                     /* iOS keeps a fixed body from being scrolled by focus/keyboard */
+	inset: 0;
+	margin: 0;
+}
+
+/* WebKit does not always apply touch-action through position:absolute descendants
+   (bugs.webkit.org/show_bug.cgi?id=218015) and the game is almost entirely absolute,
+   so state it on every element. */
+.ios-fixes *
+{
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+	-webkit-touch-callout: none;
+}
+
+/* --- fast tap targets: no gestures at all, no selection, no callout ------------------ */
+.ios-fixes #bigCookie,
+.ios-fixes #bigCookie *,
+.ios-fixes #sectionLeft,
+.ios-fixes #sectionLeft *,
+.ios-fixes #backgroundLeftCanvas,
+.ios-fixes .shimmer
+{
+	touch-action: none;
+	-webkit-user-select: none;
+	user-select: none;
+	-webkit-touch-callout: none;
+}
+.ios-fixes #products .product,
+.ios-fixes #store .crate
+{
+	touch-action: pan-y;                 /* the store must still scroll when you drag over items */
+	-webkit-user-select: none;
+	user-select: none;
+	-webkit-touch-callout: none;
+}
+
+/* --- drag surfaces: the game handles the finger itself ------------------------------- */
+.ios-fixes #ascend,
+.ios-fixes #ascend *,
+.ios-fixes .templeGod,
+.ios-fixes .templeGod *
+{
+	touch-action: none;
+}
+
+/* --- scroll areas: vertical panning only, no scroll chaining to the page -------------- */
+.ios-fixes #sectionRight,
+.ios-fixes #centerArea,
+.ios-fixes #menu,
+.ios-fixes #prompt .block
+{
+	touch-action: pan-y;
+	overscroll-behavior: contain;
+	-webkit-overflow-scrolling: touch;
+}
+.ios-fixes #sectionRight *,
+.ios-fixes #centerArea *
+{
+	touch-action: pan-y;
+}
+.ios-fixes #centerArea .templeGod,
+.ios-fixes #centerArea .templeGod *
+{
+	touch-action: none;
+}
+
+/* --- text fields (Import / Export save, bakery name, script injection) ---------------- */
+.ios-fixes textarea,
+.ios-fixes input,
+.ios-fixes .selectable
+{
+	-webkit-user-select: text;
+	user-select: text;
+	-webkit-touch-callout: default;      /* long-press > Paste must work for importing saves */
+	touch-action: manipulation;
+}
+
+/* --- safe area probe used by ios-fixes.js -------------------------------------------- */
+#iosSafeAreaProbe{position:fixed;visibility:hidden;pointer-events:none;}

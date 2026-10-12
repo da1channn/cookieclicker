@@ -170,7 +170,7 @@ var ajax=function(url,callback)
 
 // New features.
 var currentPathname=new URL(window.location.href).pathname;
-var mobileFeaturesEnabled=currentPathname.endsWith("/mobile")||currentPathname.endsWith("/mobile.html");
+var mobileFeaturesEnabled=(typeof IOS_OPTIMIZED!=="undefined"&&IOS_OPTIMIZED)||currentPathname.endsWith("/mobile")||currentPathname.endsWith("/mobile.html");//IOS_OPTIMIZED: set by index.html (iOS build)
 var modsEnabled=mobileFeaturesEnabled||currentPathname.endsWith("/modded")||currentPathname.endsWith("/modded.html");
 
 var DataDir='';//'//orteil.dashnet.org/data/';

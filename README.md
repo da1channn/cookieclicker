@@ -148,7 +148,7 @@ iOS では「長押し後に指を離してもクリックが発火する」た�
 
 ## Evals
 
-`evals/run.js` が 54 項目の自動評価を行います（Chromium の iPhone エミュレーション + 実タッチ入力）。
+`evals/run.js` が 55 項目の自動評価を行います（Chromium の iPhone エミュレーション + 実タッチ入力）。
 方法と各項目は [evals/README.md](evals/README.md)、スコアの推移は [evals/RESULTS.md](evals/RESULTS.md)。
 
 ```sh

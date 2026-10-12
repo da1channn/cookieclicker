@@ -112,6 +112,11 @@ PORTRAIT UI (html.ios-portrait, set by ios-fixes.js when the phone is upright)
 Logical layout width is 375px. Cookie on top, one panel below, tab bar at the bottom.
 =======================================================================================*/
 #iosTabBar{display:none;}
+/* the DashNet/Steam link bar wraps over the game on a phone; language is also in Options */
+.ios-fixes #topBar{display:none !important;}
+.ios-fixes #game{top:0 !important;}
+/* plasma4 leaves an empty ad placeholder at the top of the store */
+.ios-fixes .ifNoAds{display:none !important;}
 .ios-portrait #topBar,
 .ios-portrait .separatorLeft,
 .ios-portrait .separatorRight,
@@ -232,16 +237,24 @@ Logical layout width is 375px. Cookie on top, one panel below, tab bar at the bo
 .ios-portrait.ios-panel-expanded #iosPanelHandle{top:64px;}
 #sectionMiddle,#sectionRight,#iosPanelHandle{transition:top 0.18s ease-out;}
 
-/* ? help button, top left of the cookie view */
+/* help button, top left of the cookie view: a labelled pill (a lone "?" read as a broken image) */
 #iosHelpButton{display:none;}
 .ios-portrait #iosHelpButton
 {
-	display:flex;align-items:center;justify-content:center;
-	position:absolute;left:6px;top:6px;width:44px;height:44px;z-index:300;
-	border-radius:50%;background:rgba(0,0,0,0.55);border:2px solid rgba(255,215,160,0.6);
-	color:#ffe3b0;font:bold 22px/1 Georgia,serif;cursor:pointer;touch-action:manipulation;
+	display:flex;align-items:center;gap:4px;
+	position:absolute;left:6px;top:6px;height:42px;padding:0 12px 0 9px;z-index:300;
+	border-radius:21px;background:linear-gradient(#4a3420,#2a1b0e);
+	border:1px solid rgba(255,210,140,0.75);box-shadow:0 2px 4px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,230,180,0.25);
+	color:#ffe3b0;font:600 14px/1 -apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif;
+	text-shadow:0 1px 0 #000;cursor:pointer;touch-action:manipulation;white-space:nowrap;
 }
-#iosHelpButton:active{background:rgba(255,190,90,0.3);}
+#iosHelpButton .iosHelpIcon{font-size:16px;}
+#iosHelpButton:active{background:#6a4a2a;}
+
+/* hidden while ascending (the ascension screen has its own controls) */
+#game.ascending #iosPanelHandle,
+#game.ascending #iosHelpButton{display:none !important;}
+.ios-portrait #game.ascending #notes{top:40%;}
 
 /* help overlay (outside the scaled game, real device pixels) */
 #iosHelp{display:none;}
@@ -263,3 +276,15 @@ Logical layout width is 375px. Cookie on top, one panel below, tab bar at the bo
 	color:#f3e6d3;font-size:22px;cursor:pointer;text-decoration:none;
 }
 #iosHelp iframe{flex:1 1 auto;width:100%;border:0;background:#120b05;}
+
+/*=====================================================================================
+LANDSCAPE (original 3-column layout) on a phone: ~400px tall, ~210px middle column
+=======================================================================================*/
+/* the bakery name sits just above the 10% line and wraps to two lines in the narrow left column */
+.ios-fixes:not(.ios-portrait) #bakeryName{font-size:14px;left:4%;width:92%;padding:3px 0;}
+/* the news ticker gets squeezed to one character per line between the four menu buttons */
+.ios-fixes #sectionMiddle{container-type:inline-size;container-name:middle;}
+@container middle (max-width: 330px)
+{
+	#commentsText{display:none;}
+}

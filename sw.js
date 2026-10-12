@@ -5,7 +5,7 @@
 	- other origins: untouched
 	Saves live in localStorage and are never touched by this worker.
 */
-var VERSION='cc-ios-v1';
+var VERSION='cc-ios-v2';
 var CORE=[
 	'./',
 	'index.html',
@@ -18,7 +18,8 @@ var CORE=[
 	'minigameMarket.js',
 	'minigamePantheon.js',
 	'loc/EN.js',
-	'manifest.webmanifest'
+	'manifest.webmanifest',
+	'help.html'
 ];
 
 self.addEventListener('install',function(e){

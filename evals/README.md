@@ -89,3 +89,22 @@ So the manual iPhone checklist in the main README is still required.
 | T33 | P1 pwa | relaunch works offline |
 | T34 | P2 ux | cookie press feedback while the finger is down |
 | T28 | P0 stability | no JavaScript errors |
+
+### Portrait UI evals (added with the portrait layout)
+
+| ID | Checks |
+|----|--------|
+| T38 | UI scale in portrait ≥ 0.95 (desktop layout shrinks to 0.44) |
+| T39 | tab bar in the bottom thumb zone, above the home indicator, every tab ≥ 44pt (Apple HIG) |
+| T40 | each tab opens its screen (store, buildings, stats, options, info, legacy prompt) |
+| T41 | store rows full width and ≥ 44pt tall, upgrade crates ≥ 44pt |
+| T42 | the whole big cookie is visible and hit-testable |
+| T43 | no sideways clipping in any panel |
+| T44 | building tooltip fits on screen |
+| T45 | notifications never block the cookie or the store |
+| T46 | landscape returns to the 3-column layout, portrait restores the tab UI and tab |
+| T47 | ? help button ≥ 44pt opens the touch-controls guide, X closes it |
+| T48 | help shows itself on the first launch only |
+| T49 | panel drawer: more store rows when pulled up, state remembered across launches |
+| T50 | long press never harvests a sugar lump or plants a garden plot; tap still does |
+| T51 | ascension: long press on a heavenly upgrade = info only, tap buys |

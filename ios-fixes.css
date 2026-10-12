@@ -50,7 +50,12 @@ body
 	-webkit-touch-callout: none;
 }
 .ios-fixes #products .product,
-.ios-fixes #store .crate
+.ios-fixes #store .crate,
+.ios-fixes .gardenTile,
+.ios-fixes .gardenSeed,
+.ios-fixes .grimoireSpell,
+.ios-fixes .bankButton,
+.ios-fixes .productLevel
 {
 	touch-action: pan-y;                 /* the store must still scroll when you drag over items */
 	-webkit-user-select: none;
@@ -101,3 +106,160 @@ body
 
 /* --- safe area probe used by ios-fixes.js -------------------------------------------- */
 #iosSafeAreaProbe{position:fixed;visibility:hidden;pointer-events:none;}
+
+/*=====================================================================================
+PORTRAIT UI (html.ios-portrait, set by ios-fixes.js when the phone is upright)
+Logical layout width is 375px. Cookie on top, one panel below, tab bar at the bottom.
+=======================================================================================*/
+#iosTabBar{display:none;}
+.ios-portrait #topBar,
+.ios-portrait .separatorLeft,
+.ios-portrait .separatorRight,
+.ios-portrait #versionNumber{display:none !important;}
+.ios-portrait #game{top:0 !important;}
+
+/* cookie panel: the canvas is 80px taller than what is visible so the cookie (drawn at 40% of
+   the canvas height) sits in the middle of the visible part; the extra strip hides under the panel */
+.ios-portrait #sectionLeft
+{
+	left:0;right:0;top:0;bottom:auto;
+	width:auto;min-width:0;
+	height:calc(42% + 80px);
+	z-index:1;
+}
+.ios-portrait #cookies{top:0;font-size:22px !important;padding:4px 0;}
+.ios-portrait #bakeryNameAnchor{top:auto;bottom:calc(80px + 4px);}
+.ios-portrait #bakeryName{font-size:14px !important;}
+.ios-portrait #lumps{left:10px;top:auto;bottom:calc(80px + 28px);transform:scale(1.25);transform-origin:0 100%;}
+.ios-portrait #buffs{top:44px;}
+
+/* lower panel: store or buildings/menus, one at a time */
+.ios-portrait #sectionMiddle,
+.ios-portrait #sectionRight
+{
+	position:absolute;
+	left:0 !important;right:0 !important;
+	top:42%;bottom:60px;
+	width:auto;height:auto;
+	min-width:0;margin:0;padding:0;
+	z-index:2;
+	background:#000 url(img/darkNoise.jpg);
+	box-shadow:0 -2px 8px rgba(0,0,0,0.8);
+}
+.ios-portrait.ios-tab-store #sectionMiddle,
+.ios-portrait.ios-tab-middle #sectionRight{visibility:hidden;pointer-events:none;}
+
+/* store: full width rows */
+.ios-portrait #sectionRight{overflow-y:scroll;}
+.ios-portrait #store,
+.ios-portrait #storeTitle,
+.ios-portrait .storeSection,
+.ios-portrait #products .product{width:auto !important;}
+.ios-portrait #storeTitle{display:none;}/* the tab already says Store */
+.ios-portrait #storeBulk{margin:0 auto;transform:scale(1.15);transform-origin:50% 0;margin-bottom:6px;}
+.ios-portrait #smallSupport,.ios-portrait #support{display:none !important;}
+
+/* buildings / menus: header keeps the news ticker, corner buttons move to the tab bar */
+.ios-portrait #comments{height:36px;padding:6px 8px;padding-bottom:6px;font-size:13px;background-size:100% 48px;}
+.ios-portrait #prefsButton,
+.ios-portrait #statsButton,
+.ios-portrait #logButton,
+.ios-portrait #legacyButton{display:none !important;}
+.ios-portrait #commentsText{left:8px;right:8px;bottom:0;}
+.ios-portrait #centerArea{top:48px;left:0;right:0;}
+.ios-portrait #ascendMeterContainer{left:0;right:0;}
+
+/* tab bar */
+.ios-portrait #iosTabBar
+{
+	display:flex;
+	position:absolute;left:0;right:0;bottom:0;height:60px;
+	z-index:50000;
+	background:linear-gradient(#2a1d12,#120b05);
+	border-top:1px solid rgba(255,200,120,0.35);
+	box-shadow:0 -4px 12px rgba(0,0,0,0.7);
+	touch-action:manipulation;
+}
+#game.ascending #iosTabBar,
+.ios-portrait #game.ascending #iosTabBar{display:none;}
+.iosTab
+{
+	flex:1 1 0;
+	display:flex;flex-direction:column;align-items:center;justify-content:center;
+	color:#b9a58c;
+	font-size:11px;line-height:13px;
+	cursor:pointer;
+	-webkit-user-select:none;user-select:none;
+	text-shadow:0 1px 0 #000;
+	border-top:3px solid transparent;
+	min-width:0;
+}
+.iosTab .iosTabIcon{font-size:22px;line-height:26px;filter:grayscale(0.5);opacity:0.85;}
+.iosTab .iosTabLabel{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;padding:0 2px;}
+.iosTab.on{color:#ffd88a;border-top-color:#ffbf4d;background:rgba(255,190,90,0.10);}
+.iosTab.on .iosTabIcon{filter:none;opacity:1;}
+.iosTab:active{background:rgba(255,190,90,0.18);}
+.iosTab{position:relative;}
+.iosTab.badge:after{content:'';position:absolute;top:7px;left:calc(50% + 10px);width:9px;height:9px;border-radius:50%;background:#ff4d3a;box-shadow:0 0 0 2px #1b120a;}
+
+/* notifications: small, over the top of the cookie panel, and taps go through them to the
+   cookie (only their close buttons catch taps) so they never block the store or clicking */
+.ios-portrait #notes{top:58px;bottom:auto;transform:scale(0.78);transform-origin:50% 0;pointer-events:none;opacity:0.95;}
+.ios-portrait #notes .close{pointer-events:auto;}
+.ios-portrait #notes .note ~ .note ~ .note{display:none;}/* at most 2 at a time (newest first) */
+
+/* prompts wider than the screen */
+.ios-portrait #prompt.widePrompt{width:330px;left:-165px;}
+.ios-portrait #prompt.legacyPrompt{width:330px;left:-165px;}
+.ios-portrait #prompt{max-width:330px;}
+
+/* panel drawer handle (on the panel's top edge) */
+#iosPanelHandle{display:none;}
+.ios-portrait #iosPanelHandle
+{
+	display:block;position:absolute;left:50%;top:42%;
+	width:120px;height:40px;margin-left:-60px;margin-top:-20px;
+	z-index:3;cursor:pointer;touch-action:none;
+}
+.iosHandlePill
+{
+	position:absolute;left:50%;top:50%;width:56px;height:8px;margin:-4px 0 0 -28px;
+	border-radius:4px;background:rgba(255,215,160,0.75);box-shadow:0 1px 3px #000,0 0 0 1px rgba(0,0,0,0.6);
+}
+#iosPanelHandle:active .iosHandlePill{background:#ffd88a;}
+.ios-portrait.ios-panel-expanded #sectionMiddle,
+.ios-portrait.ios-panel-expanded #sectionRight{top:64px;}
+.ios-portrait.ios-panel-expanded #iosPanelHandle{top:64px;}
+#sectionMiddle,#sectionRight,#iosPanelHandle{transition:top 0.18s ease-out;}
+
+/* ? help button, top left of the cookie view */
+#iosHelpButton{display:none;}
+.ios-portrait #iosHelpButton
+{
+	display:flex;align-items:center;justify-content:center;
+	position:absolute;left:6px;top:6px;width:44px;height:44px;z-index:300;
+	border-radius:50%;background:rgba(0,0,0,0.55);border:2px solid rgba(255,215,160,0.6);
+	color:#ffe3b0;font:bold 22px/1 Georgia,serif;cursor:pointer;touch-action:manipulation;
+}
+#iosHelpButton:active{background:rgba(255,190,90,0.3);}
+
+/* help overlay (outside the scaled game, real device pixels) */
+#iosHelp{display:none;}
+#iosHelp.on
+{
+	display:flex;flex-direction:column;
+	position:fixed;inset:0;z-index:2147483000;background:#120b05;
+	padding-top:env(safe-area-inset-top);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);
+}
+#iosHelp .iosHelpBar
+{
+	flex:0 0 auto;height:48px;display:flex;align-items:center;justify-content:space-between;
+	padding:0 4px 0 16px;border-bottom:1px solid rgba(255,200,120,0.25);color:#ffbf4d;
+	font:600 17px/1 -apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif;
+}
+#iosHelp .iosHelpClose
+{
+	width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+	color:#f3e6d3;font-size:22px;cursor:pointer;text-decoration:none;
+}
+#iosHelp iframe{flex:1 1 auto;width:100%;border:0;background:#120b05;}

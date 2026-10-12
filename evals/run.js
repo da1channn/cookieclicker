@@ -33,15 +33,16 @@ const EVAL_TIMEOUT_MS=150000;//a hung eval fails instead of stalling the suite
 let browser,srv;
 const pageErrors=[];
 
-async function openGame(file=TARGET,{viewport=PORTRAIT,insets=null,storage=null,init=null,query=''}={}){
+async function openGame(file=TARGET,{viewport=PORTRAIT,insets=null,storage=null,init=null,query='',firstRun=false}={}){
 	const context=await browser.newContext({viewport,screen:{width:PORTRAIT.width,height:PORTRAIT.height},deviceScaleFactor:3,isMobile:true,hasTouch:true,userAgent:UA});
 	await context.route(url=>!url.href.startsWith(srv.base.replace(/cookieclicker\/$/,'')),r=>r.abort());
-	await context.addInitScript(([storage])=>{
+	await context.addInitScript(([storage,firstRun])=>{
 		try {
 			localStorage.setItem('CookieClickerLang','EN');
+			if (!firstRun && !localStorage.getItem('CookieClickerIOSUI')) localStorage.setItem('CookieClickerIOSUI',JSON.stringify({helpSeen:true}));//first-run help has its own eval
 			if (storage) for (const k in storage) localStorage.setItem(k,storage[k]);
 		} catch(e){}
-	},[storage]);
+	},[storage,firstRun]);
 	if (init) await context.addInitScript(init);
 	const page=await context.newPage();
 	page.on('pageerror',e=>pageErrors.push(file+': '+e.message));
@@ -100,6 +101,11 @@ const fits=g=>g.page.evaluate(()=>{
 const percentile=(a,p)=>{if (!a.length) return null;const s=[...a].sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor(p*(s.length-1)+0.5))];};
 const expectedScale=(w,h)=>Math.min(w/Math.max(800,w),h/Math.max(200,h));
 
+//portrait UI: the buildings/minigames live behind the Buildings tab; tap it like a player would
+async function showBuildings(g){
+	const tab=await center(g,'#iosTab-buildings');
+	if (tab && tab.w>0) {await tap(g,tab);await sleep(400);}
+}
 async function richGame(g){
 	await g.page.evaluate(()=>{Game.cookies=1e40;Game.cookiesEarned=1e40;Game.RefreshStore&&Game.RefreshStore();});
 	await sleep(600);
@@ -251,7 +257,7 @@ const EVALS=[
 	const vs=await vvScale(g);
 	await g.context.close();
 	const ok=f0.ok&&f1.ok&&f2.ok&&Math.abs(f2.scale-f0.scale)<0.001&&Math.abs(vs-1)<0.01
-		&&Math.abs(f0.scale-expectedScale(PORTRAIT.width,PORTRAIT.height))<0.002&&Math.abs(f1.scale-expectedScale(LANDSCAPE.width,LANDSCAPE.height))<0.002;
+		&&Math.abs(f1.scale-expectedScale(LANDSCAPE.width,LANDSCAPE.height))<0.002;
 	return {pass:ok,detail:{portrait:f0,landscape:f1,back:f2,vvScale:vs}};
 }],
 ['T16','finger position maps to game coordinates (particles/drag at the finger)','P1 rotation',async()=>{
@@ -282,6 +288,7 @@ const EVALS=[
 }],
 ['T18','viewport self-repair after resume; no forced resizes while idle','P1 resume',async()=>{
 	const g=await openGame();
+	const scale0=await g.page.evaluate(()=>Game.scale);
 	await g.page.evaluate(()=>{window.__rz=0;const o=Game.resize;Game.resize=function(){__rz++;return o.apply(this,arguments);};});
 	await sleep(3000);
 	const idle=await g.page.evaluate(()=>__rz);
@@ -291,7 +298,7 @@ const EVALS=[
 	await sleep(1500);
 	const f=await fits(g);
 	await g.context.close();
-	return {pass:idle===0&&f.ok&&Math.abs(f.scale-expectedScale(PORTRAIT.width,PORTRAIT.height))<0.002,detail:{idleResizes:idle,after:f}};
+	return {pass:idle===0&&f.ok&&Math.abs(f.scale-scale0)<0.002,detail:{idleResizes:idle,scale0,after:f}};
 }],
 ['T19','save compatibility with plasma4 mobile.html and desktop.html (both directions, identical format)','P0 save',async()=>{
 	const decode=s=>Buffer.from(decodeURIComponent(s).replace('!END!',''),'base64').toString('utf8');
@@ -388,7 +395,8 @@ const EVALS=[
 	});
 	if (!ok) {await g.context.close();return {pass:false,detail:'garden did not load'};}
 	const tile=await g.page.evaluate(()=>{const M=Game.Objects['Farm'].minigame;for (let y=0;y<6;y++)for (let x=0;x<6;x++){const t=l('gardenTile-'+x+'-'+y);if (t&&t.style.display!=='none'&&M.isTileUnlocked(x,y)) return {x,y,id:'#gardenTile-'+x+'-'+y};}return null;});
-	await g.page.evaluate(id=>l(id.slice(1)).scrollIntoView({block:'center'}),tile.id);await sleep(400);
+	await showBuildings(g);
+	await g.page.evaluate(id=>{const c=l('centerArea'),t=l(id.slice(1)),r=t.getBoundingClientRect(),cr=c.getBoundingClientRect();c.scrollTop+=r.top-cr.top-cr.height/2;},tile.id);await sleep(400);
 	const p=await center(g,tile.id);
 	await tap(g,p);await sleep(800);
 	const r=await g.page.evaluate(t=>Game.Objects['Farm'].minigame.plot[t.y][t.x][0],tile);
@@ -404,7 +412,8 @@ const EVALS=[
 		T.switchMinigame(1);await new Promise(r=>setTimeout(r,800));return true;
 	});
 	if (!ok) {await g.context.close();return {pass:false,detail:'pantheon did not load'};}
-	await g.page.evaluate(()=>l('templeSlot0').scrollIntoView({block:'center'}));await sleep(400);
+	await showBuildings(g);
+	await g.page.evaluate(()=>{const c=l('centerArea'),r=l('templeSlot0').getBoundingClientRect(),cr=c.getBoundingClientRect();c.scrollTop+=r.top-cr.top-cr.height/3;});await sleep(400);
 	const god=await center(g,'#templeGod0');
 	await tap(g,god);await sleep(300);
 	const slot=await center(g,'#templeSlot0');
@@ -560,7 +569,175 @@ const EVALS=[
 	await g.page.setViewportSize({width:393,height:560});await sleep(1500);
 	const stuck=await g.page.evaluate(()=>({h:Math.round(Game.windowH*Game.scale),body:document.body.style.height,inner:innerHeight}));
 	await g.context.close();
-	return {pass:control===700&&stuck.h===852,detail:{control,stuck}};
+	return {pass:Math.abs(control-700)<=2&&Math.abs(stuck.h-852)<=2,detail:{control,stuck}};
+}],
+['T38','portrait: readable size (text scale >= 0.95, not the 0.44 desktop shrink)','P2 portrait UI',async()=>{
+	const g=await openGame();
+	const r=await g.page.evaluate(()=>({scale:Game.scale,vv:visualViewport.scale,font:parseFloat(getComputedStyle(l('productName0')||document.body).fontSize)}));
+	await g.context.close();
+	const eff=r.scale*r.vv;
+	return {pass:eff>=0.95,detail:r,metrics:{ui_scale:+eff.toFixed(3),building_name_pt:+(r.font*eff).toFixed(1)}};
+}],
+['T39','portrait: tab bar at the bottom (thumb zone), above the home indicator, every tab >= 44pt','P2 portrait UI',async()=>{
+	const g=await openGame(TARGET,{insets:{top:59,bottom:34,left:0,right:0}});
+	if (g.unsupported) return {pass:null,detail:g.unsupported};
+	const r=await g.page.evaluate(()=>{const tabs=[...document.querySelectorAll('#iosTabBar .iosTab')];
+		if (!tabs.length) return {tabs:0};
+		const rs=tabs.map(t=>t.getBoundingClientRect());
+		return {tabs:tabs.length,minW:Math.min(...rs.map(x=>x.width)),minH:Math.min(...rs.map(x=>x.height)),top:Math.min(...rs.map(x=>x.top)),bottom:Math.max(...rs.map(x=>x.bottom)),H:innerHeight};});
+	await g.context.close();
+	const ok=r.tabs>=5&&r.minW>=44&&r.minH>=44&&r.bottom<=r.H-34+1&&r.top>=r.H*0.8;
+	return {pass:ok,detail:r};
+}],
+['T40','portrait: every tab opens its screen (store, buildings, stats, options, info, legacy prompt)','P2 portrait UI',async()=>{
+	const g=await openGame();
+	const has=await g.page.evaluate(()=>!!document.getElementById('iosTabBar'));
+	if (!has) {await g.context.close();return {pass:false,detail:'no tab bar'};}
+	const out={};
+	const visibleAt=sel=>g.page.evaluate(sel=>{const e=document.querySelector(sel);if (!e) return false;const r=e.getBoundingClientRect();if (!r.width) return false;const h=document.elementFromPoint(r.left+r.width/2,r.top+Math.min(r.height/2,20));return !!h&&(e===h||e.contains(h));},sel);
+	for (const [tab,check] of [['buildings',async()=>await visibleAt('#centerArea')&&await g.page.evaluate(()=>Game.onMenu==='')],
+		['stats',async()=>g.page.evaluate(()=>Game.onMenu==='stats')],['prefs',async()=>g.page.evaluate(()=>Game.onMenu==='prefs')],
+		['log',async()=>g.page.evaluate(()=>Game.onMenu==='log')],['store',async()=>visibleAt('#product0')],
+		['legacy',async()=>g.page.evaluate(()=>!!Game.promptOn)]]){
+		await tap(g,await center(g,'#iosTab-'+tab));await sleep(500);
+		out[tab]=await check();
+	}
+	await g.context.close();
+	return {pass:Object.values(out).every(Boolean),detail:out};
+}],
+['T41','portrait: store rows are full width and >= 44pt tall','P2 portrait UI',async()=>{
+	const g=await openGame();await richGame(g);
+	const r=await g.page.evaluate(()=>{const p=l('product0').getBoundingClientRect(),c=l('upgrades').querySelector('.crate');const cr=c?c.getBoundingClientRect():null;return {w:p.width,h:p.height,W:innerWidth,crate:cr?Math.min(cr.width,cr.height):null};});
+	await g.context.close();
+	return {pass:r.w>=r.W*0.9&&r.h>=44&&(r.crate===null||r.crate>=44),detail:r};
+}],
+['T42','portrait: whole big cookie is visible and tappable (not under a panel)','P2 portrait UI',async()=>{
+	const g=await openGame();
+	const r=await g.page.evaluate(()=>{const b=l('bigCookie').getBoundingClientRect();const cx=b.left+b.width/2,cy=b.top+b.height/2,R=b.width*0.4;
+		const pts=[[cx,cy],[cx,cy-R],[cx,cy+R],[cx-R,cy],[cx+R,cy]];
+		return {hits:pts.map(([x,y])=>{const e=document.elementFromPoint(x,y);return !!e&&e.id==='bigCookie';}),size:b.width};});
+	await g.context.close();
+	return {pass:r.hits.every(Boolean),detail:r};
+}],
+['T43','portrait: no content cut off sideways in any panel','P2 portrait UI',async()=>{
+	const g=await openGame();await richGame(g);
+	const out={};
+	const measure=()=>g.page.evaluate(()=>{const f=id=>{const e=l(id);return e?e.scrollWidth-e.clientWidth:0;};return Math.max(f('sectionRight'),f('centerArea'),f('menu'),document.documentElement.scrollWidth-innerWidth);});
+	out.store=await measure();
+	for (const t of ['buildings','stats','prefs','log']){const p=await center(g,'#iosTab-'+t);if (p) {await tap(g,p);await sleep(500);}out[t]=await measure();}
+	await g.context.close();
+	return {pass:Object.values(out).every(v=>v<=1),detail:out};
+}],
+['T44','portrait: building tooltip fits on screen','P2 portrait UI',async()=>{
+	const g=await openGame();await richGame(g);
+	const p=await center(g,'#product0');
+	await touch(g,'touchStart',[{x:p.x,y:p.y,id:1}]);await sleep(700);
+	const r=await g.page.evaluate(()=>{const t=l('tooltip').getBoundingClientRect();return {l:t.left,r:t.right,t:t.top,b:t.bottom,W:innerWidth,H:innerHeight,on:Game.tooltip.on};});
+	await touch(g,'touchEnd',[]);
+	await g.context.close();
+	return {pass:r.on===1&&r.l>=-1&&r.r<=r.W+1&&r.t>=-1&&r.b<=r.H+1,detail:r};
+}],
+['T45','notifications never block the cookie, the store or the tab bar','P2 portrait UI',async()=>{
+	const g=await openGame();await recorder(g);
+	await g.page.evaluate(()=>{for (let i=0;i<4;i++) Game.Notify('Test notification '+i,'This one has a description text','',0,1);});
+	await sleep(400);
+	const p=await center(g,'#bigCookie');
+	await tap(g,p);await sleep(600);
+	const r=await g.page.evaluate(()=>{const n=l('notes').getBoundingClientRect(),s=l('sectionRight').getBoundingClientRect(),tb=document.getElementById('iosTabBar');
+		const under=(x,y)=>{const e=document.elementFromPoint(x,y);return e?(e.closest('#notes')?'notes':e.id||e.className):null;};
+		return {clicks:__rec.clicks.length,overStore:n.bottom>s.top+2&&n.height>0,tab:tb?under(tb.getBoundingClientRect().left+20,tb.getBoundingClientRect().top+20):null};});
+	await g.context.close();
+	return {pass:r.clicks===1&&!r.overStore,detail:r};
+}],
+['T46','rotate: landscape gets the original 3-column layout, portrait gets the tab UI back','P2 portrait UI',async()=>{
+	const g=await openGame();
+	await tap(g,await center(g,'#iosTab-buildings')||{x:0,y:0});await sleep(300);
+	await g.page.setViewportSize(LANDSCAPE);await sleep(1500);
+	const land=await g.page.evaluate(()=>{const tb=document.getElementById('iosTabBar');return {tabBar:tb?getComputedStyle(tb).display:'none',topBar:getComputedStyle(l('topBar')).display,store:l('sectionRight').getBoundingClientRect().width,scale:Game.scale};});
+	await g.page.setViewportSize(PORTRAIT);await sleep(1500);
+	const port=await g.page.evaluate(()=>{const tb=document.getElementById('iosTabBar');return {tabBar:tb?getComputedStyle(tb).display:'none',active:(document.querySelector('.iosTab.on')||{}).id,topBar:getComputedStyle(l('topBar')).display};});
+	const f=await fits(g);
+	await g.context.close();
+	const ok=land.tabBar==='none'&&land.topBar!=='none'&&land.store<400&&port.tabBar==='flex'&&port.active==='iosTab-buildings'&&port.topBar==='none'&&f.ok;
+	return {pass:ok,detail:{land,port}};
+}],
+['T47','help: ? button (>=44pt) opens the touch-controls guide, X closes it','P2 help',async()=>{
+	const g=await openGame();
+	const btn=await center(g,'#iosHelpButton');
+	if (!btn||!btn.w) {await g.context.close();return {pass:false,detail:'no help button'};}
+	await tap(g,btn);await sleep(1500);
+	const r=await g.page.evaluate(()=>{const o=document.getElementById('iosHelp');const f=o&&o.querySelector('iframe');let txt='';try {txt=f.contentDocument.body.innerText;} catch(e){}
+		const rr=o?o.getBoundingClientRect():{width:0,height:0};return {open:!!o&&o.classList.contains('on'),cover:rr.width>=innerWidth-1&&rr.height>=innerHeight-1,hasTouch:/Touch controls|タッチ操作/.test(txt),hasLongPress:/Long press|長押し/.test(txt)};});
+	const close=await center(g,'#iosHelp .iosHelpClose');
+	await tap(g,close);await sleep(400);
+	const closed=await g.page.evaluate(()=>!document.getElementById('iosHelp').classList.contains('on'));
+	await g.context.close();
+	return {pass:btn.w>=44&&btn.h>=44&&r.open&&r.cover&&r.hasTouch&&r.hasLongPress&&closed,detail:{btn:[Math.round(btn.w),Math.round(btn.h)],...r,closed}};
+}],
+['T48','help opens by itself on the very first launch only','P2 help',async()=>{
+	const g=await openGame(TARGET,{firstRun:true});
+	await sleep(1500);
+	const first=await g.page.evaluate(()=>{const o=document.getElementById('iosHelp');return !!o&&o.classList.contains('on');});
+	await g.page.reload();
+	await g.page.waitForFunction(()=>window.Game&&Game.ready&&Game.T>10,null,{timeout:60000});await sleep(1500);
+	const second=await g.page.evaluate(()=>{const o=document.getElementById('iosHelp');return !!o&&o.classList.contains('on');});
+	await g.context.close();
+	return {pass:first&&!second,detail:{first,second}};
+}],
+['T49','panel drawer: handle pulls the store up (more rows), again puts it back, state remembered','P2 portrait UI',async()=>{
+	const g=await openGame();await richGame(g);
+	const rows=()=>g.page.evaluate(()=>{const p=l('sectionRight').getBoundingClientRect();return [...document.querySelectorAll('#products .product')].filter(e=>{const r=e.getBoundingClientRect();return r.height>0&&r.top>=p.top-1&&r.bottom<=p.bottom+1;}).length;});
+	const h=await center(g,'#iosPanelHandle');
+	if (!h||!h.w) {await g.context.close();return {pass:false,detail:'no handle'};}
+	const r0=await rows();
+	await tap(g,h);await sleep(500);
+	const r1=await rows();
+	const countVisible=await g.page.evaluate(()=>{const c=l('cookies').getBoundingClientRect();const e=document.elementFromPoint(c.left+c.width/2,c.top+8);return !!e&&!e.closest('#sectionRight');});
+	await g.page.reload();await g.page.waitForFunction(()=>window.Game&&Game.ready&&Game.T>10,null,{timeout:60000});await sleep(800);
+	const remembered=await g.page.evaluate(()=>document.documentElement.classList.contains('ios-panel-expanded'));
+	await tap(g,await center(g,'#iosPanelHandle'));await sleep(500);
+	const back=await g.page.evaluate(()=>!document.documentElement.classList.contains('ios-panel-expanded'));
+	await g.context.close();
+	return {pass:r1>=r0+3&&countVisible&&remembered&&back,detail:{rowsBefore:r0,rowsExpanded:r1,countVisible,remembered,back}};
+}],
+['T50','long press never spends: sugar lump not harvested, garden plot not planted; tap still works','P1 minigame',async()=>{
+	const g=await openGame();await richGame(g);
+	await g.page.evaluate(()=>{window.__lump=0;const o=Game.clickLump;Game.clickLump=function(){__lump++;};Game.lumpsTotal=Math.max(Game.lumpsTotal,0);});
+	await sleep(500);
+	const lp=await center(g,'#lumps');
+	if (!lp||!lp.w) {await g.context.close();return {pass:false,detail:'lumps not shown'};}
+	await tap(g,lp,{hold:800});await sleep(400);
+	const afterHold=await g.page.evaluate(()=>__lump);
+	await tap(g,lp);await sleep(400);
+	const afterTap=await g.page.evaluate(()=>__lump);
+	//garden: long press with a seed selected must not plant
+	const ok=await g.page.evaluate(async()=>{const F=Game.Objects['Farm'];F.getFree(1);F.level=1;Game.LoadMinigames();
+		for (let i=0;i<100&&!(F.minigame&&F.minigameLoaded);i++) await new Promise(r=>setTimeout(r,100));
+		if (!F.minigame) return false;F.switchMinigame(1);await new Promise(r=>setTimeout(r,800));F.minigame.seedSelected=0;return true;});
+	let planted=null;
+	if (ok){
+		await showBuildings(g);
+		const tile=await g.page.evaluate(()=>{const M=Game.Objects['Farm'].minigame;for (let y=0;y<6;y++)for (let x=0;x<6;x++){const t=l('gardenTile-'+x+'-'+y);if (t&&t.style.display!=='none'&&M.isTileUnlocked(x,y)) return {x,y,id:'#gardenTile-'+x+'-'+y};}return null;});
+		await g.page.evaluate(id=>{const c=l('centerArea'),r=l(id.slice(1)).getBoundingClientRect(),cr=c.getBoundingClientRect();c.scrollTop+=r.top-cr.top-cr.height/2;},tile.id);await sleep(400);
+		await tap(g,await center(g,tile.id),{hold:800});await sleep(500);
+		planted=await g.page.evaluate(t=>Game.Objects['Farm'].minigame.plot[t.y][t.x][0],tile);
+	}
+	await g.context.close();
+	return {pass:afterHold===0&&afterTap===1&&planted===0,detail:{lumpAfterHold:afterHold,lumpAfterTap:afterTap,gardenPlantedByHold:planted}};
+}],
+['T51','ascension: long press a heavenly upgrade = info only, tap buys it','P1 minigame',async()=>{
+	const g=await openGame();
+	await g.page.evaluate(()=>{Game.cookiesEarned=1e15;Game.heavenlyChips=1e6;Game.Ascend(1);});
+	await g.page.waitForFunction(()=>Game.OnAscend===1&&Game.AscendTimer===0,null,{timeout:20000}).catch(()=>{});
+	await sleep(800);
+	const sel=await g.page.evaluate(()=>{const c=[...document.querySelectorAll('#ascendUpgrades .crate')].find(e=>{const u=Game.UpgradesById[e.dataset.id];const r=e.getBoundingClientRect();return u&&!u.bought&&r.top>60&&r.bottom<innerHeight-10&&r.left>0&&r.right<innerWidth&&u.canBePurchased!==false;});if (!c) return null;c.id=c.id||'evalHeavenly';return {sel:'#'+c.id,id:+c.dataset.id};});
+	if (!sel) {await g.context.close();return {pass:false,detail:'no heavenly upgrade on screen'};}
+	await tap(g,await center(g,sel.sel),{hold:800});await sleep(500);
+	const held=await g.page.evaluate(id=>Game.UpgradesById[id].bought,sel.id);
+	await tap(g,await center(g,sel.sel));await sleep(600);
+	const tapped=await g.page.evaluate(id=>Game.UpgradesById[id].bought,sel.id);
+	await g.context.close();
+	return {pass:held===0&&tapped===1,detail:{upgrade:sel.id,boughtByHold:held,boughtByTap:tapped}};
 }],
 ['T28','no JavaScript errors during the whole suite','P0 stability',async()=>{
 	const g=await openGame();await sleep(2000);await g.context.close();

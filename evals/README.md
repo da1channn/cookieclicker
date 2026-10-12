@@ -108,3 +108,19 @@ So the manual iPhone checklist in the main README is still required.
 | T49 | panel drawer: more store rows when pulled up, state remembered across launches |
 | T50 | long press never harvests a sugar lump or plants a garden plot; tap still does |
 | T51 | ascension: long press on a heavenly upgrade = info only, tap buys |
+| T52 | no broken images/assets on any screen (tabs, 4 minigames, ascension, help page, landscape): `<img>` load failures, every CSS `background-image` URL fetched, any 4xx |
+| T53 | ascension screen is clean: no tab bar / drawer handle / help button, notifications clear of the Reincarnate button |
+| T54 | each tab keeps its own scroll position; a menu never opens half-scrolled from another tab |
+
+### Visual review (manual, every release)
+
+Automated checks can't judge everything, so screenshots of every screen are also reviewed by eye on
+iPhone SE (375×667), 15 Pro (393×852, Dynamic Island) and Pro Max (430×932, English). Issues found
+this way so far and fixed:
+
+- the lone "?" help button looked like a broken-image placeholder → labelled "📖 遊び方 / Help" pill
+- the drawer handle showed in the middle of the ascension screen; notifications covered "Reincarnate"
+- an empty plasma4 ad box left a black strip at the top of the store
+- the DashNet/Steam link bar wrapped over the game in landscape (now hidden on iOS)
+- the bakery name was cut off and the news ticker squeezed to one character per line in landscape
+- menus opened half-scrolled when switching from another scrolled menu

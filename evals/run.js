@@ -649,7 +649,7 @@ const EVALS=[
 	await g.context.close();
 	return {pass:r.clicks===1&&!r.overStore,detail:r};
 }],
-['T46','rotate: landscape gets the original 3-column layout, portrait gets the tab UI back','P2 portrait UI',async()=>{
+['T46','rotate: landscape gets the original 3-column layout, portrait gets the tab UI back (link bar hidden on iOS)','P2 portrait UI',async()=>{
 	const g=await openGame();
 	await tap(g,await center(g,'#iosTab-buildings')||{x:0,y:0});await sleep(300);
 	await g.page.setViewportSize(LANDSCAPE);await sleep(1500);
@@ -658,7 +658,7 @@ const EVALS=[
 	const port=await g.page.evaluate(()=>{const tb=document.getElementById('iosTabBar');return {tabBar:tb?getComputedStyle(tb).display:'none',active:(document.querySelector('.iosTab.on')||{}).id,topBar:getComputedStyle(l('topBar')).display};});
 	const f=await fits(g);
 	await g.context.close();
-	const ok=land.tabBar==='none'&&land.topBar!=='none'&&land.store<400&&port.tabBar==='flex'&&port.active==='iosTab-buildings'&&port.topBar==='none'&&f.ok;
+	const ok=land.tabBar==='none'&&land.store<400&&port.tabBar==='flex'&&port.active==='iosTab-buildings'&&port.topBar==='none'&&f.ok;
 	return {pass:ok,detail:{land,port}};
 }],
 ['T47','help: ? button (>=44pt) opens the touch-controls guide, X closes it','P2 help',async()=>{
@@ -738,6 +738,60 @@ const EVALS=[
 	const tapped=await g.page.evaluate(id=>Game.UpgradesById[id].bought,sel.id);
 	await g.context.close();
 	return {pass:held===0&&tapped===1,detail:{upgrade:sel.id,boughtByHold:held,boughtByTap:tapped}};
+}],
+['T52','no broken images or assets on any screen (tabs, 4 minigames, ascension, help, landscape)','P2 visual',async()=>{
+	const g=await openGame();await richGame(g);
+	const bad=new Set();
+	g.page.on('response',r=>{if (r.url().startsWith(srv.base)&&r.status()>=400) bad.add(r.status()+' '+r.url().replace(srv.base,''));});
+	const css=new Set();
+	const sweep=async label=>{
+		const r=await g.page.evaluate(()=>{const imgs=[],urls=new Set();
+			document.querySelectorAll('img').forEach(i=>{if (i.offsetParent&&i.complete&&i.naturalWidth===0) imgs.push(i.src);});
+			document.querySelectorAll('*').forEach(e=>{const bg=getComputedStyle(e).backgroundImage;(bg.match(/url\("([^"]+)"\)/g)||[]).forEach(u=>urls.add(u.slice(5,-2)));});
+			return {imgs,urls:[...urls]};});
+		r.imgs.forEach(u=>bad.add(label+' img '+u));r.urls.forEach(u=>css.add(u));
+	};
+	await sweep('store');
+	await g.page.evaluate(async()=>{for (const n of ['Farm','Temple','Wizard tower','Bank']){const o=Game.Objects[n];o.getFree(1);o.level=1;}Game.LoadMinigames();
+		for (let i=0;i<100;i++){if (['Farm','Temple','Wizard tower','Bank'].every(n=>Game.Objects[n].minigameLoaded)) break;await new Promise(r=>setTimeout(r,100));}
+		for (const n of ['Farm','Temple','Wizard tower','Bank']) Game.Objects[n].switchMinigame(1);});
+	for (const t of ['buildings','stats','prefs','log']){const p=await center(g,'#iosTab-'+t);if (p) {await tap(g,p);await sleep(600);}await sweep(t);}
+	const hb=await center(g,'#iosHelpButton');if (hb) {await tap(g,hb);await sleep(1500);}
+	const helpBroken=await g.page.evaluate(()=>{const f=document.querySelector('#iosHelp iframe');if (!f) return [];return [...f.contentDocument.images].filter(i=>i.complete&&i.naturalWidth===0).map(i=>i.src);});
+	helpBroken.forEach(u=>bad.add('help img '+u));
+	await g.page.evaluate(()=>{IOSFixes.portrait.closeHelp();Game.cookiesEarned=1e15;Game.Ascend(1);});
+	await g.page.waitForFunction(()=>Game.OnAscend===1&&Game.AscendTimer===0,null,{timeout:20000}).catch(()=>{});await sleep(800);
+	await sweep('ascend');
+	await g.page.evaluate(()=>Game.Reincarnate(1));await sleep(2500);
+	await g.page.setViewportSize(LANDSCAPE);await sleep(1500);await sweep('landscape');
+	const cssBad=await g.page.evaluate(async us=>{const out=[];for (const u of us){if (!u.startsWith(location.origin)) continue;try {const r=await fetch(u);if (!r.ok) out.push(r.status+' '+u);} catch(e){out.push('ERR '+u);}}return out;},[...css]);
+	cssBad.forEach(x=>bad.add('css '+x));
+	await g.context.close();
+	return {pass:bad.size===0,detail:{problems:[...bad].slice(0,10),cssImagesChecked:css.size},metrics:{css_images_checked:css.size}};
+}],
+['T53','ascension screen is clean: no tab bar / drawer handle / help button, notifications clear of the top buttons','P2 visual',async()=>{
+	const g=await openGame();
+	await g.page.evaluate(()=>{Game.cookiesEarned=1e15;Game.Ascend(1);});
+	await g.page.waitForFunction(()=>Game.OnAscend===1&&Game.AscendTimer===0,null,{timeout:20000}).catch(()=>{});await sleep(600);
+	await g.page.evaluate(()=>Game.Notify('Test','Notification during ascension','',0,1));await sleep(400);
+	const r=await g.page.evaluate(()=>{const vis=id=>{const e=document.getElementById(id);if (!e) return false;const cs=getComputedStyle(e),b=e.getBoundingClientRect();return cs.display!=='none'&&cs.visibility!=='hidden'&&b.width>0&&b.height>0;};
+		const btn=document.getElementById('ascendButton')||document.querySelector('#ascendOverlay .framed');const n=l('notes').getBoundingClientRect();let overlap=false;
+		if (btn){const b=btn.getBoundingClientRect();overlap=!(n.bottom<=b.top||n.top>=b.bottom||n.right<=b.left||n.left>=b.right)&&n.height>0;}
+		return {tabBar:vis('iosTabBar'),handle:vis('iosPanelHandle'),help:vis('iosHelpButton'),notesOverTopButton:overlap};});
+	await g.context.close();
+	return {pass:!r.tabBar&&!r.handle&&!r.help&&!r.notesOverTopButton,detail:r};
+}],
+['T54','each tab keeps its own scroll position; a menu never opens half-scrolled from another tab','P2 portrait UI',async()=>{
+	const g=await openGame();await richGame(g);
+	await tap(g,await center(g,'#iosTab-stats'));await sleep(500);
+	await g.page.evaluate(()=>{l('centerArea').scrollTop=600;});await sleep(200);
+	const stats=await g.page.evaluate(()=>l('centerArea').scrollTop);
+	await tap(g,await center(g,'#iosTab-log'));await sleep(500);
+	const info=await g.page.evaluate(()=>l('centerArea').scrollTop);
+	await tap(g,await center(g,'#iosTab-stats'));await sleep(500);
+	const back=await g.page.evaluate(()=>l('centerArea').scrollTop);
+	await g.context.close();
+	return {pass:stats>100&&info===0&&Math.abs(back-stats)<=2,detail:{statsScrolled:stats,infoOpenedAt:info,statsRestored:back}};
 }],
 ['T28','no JavaScript errors during the whole suite','P0 stability',async()=>{
 	const g=await openGame();await sleep(2000);await g.context.close();

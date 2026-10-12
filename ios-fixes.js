@@ -415,7 +415,7 @@ which on a phone held upright means ~0.45x tiny text and 20px buttons. In portra
 Same DOM, same handlers: tabs just call the game's own buttons / Game.ShowMenu.
 Landscape keeps the original layout.
 =======================================================================================*/
-var Portrait=IOSFixes.portrait={active:false,tab:'store',bar:null};
+var Portrait=IOSFixes.portrait={active:false,tab:'store',bar:null,scrolls:{}};
 var TABS=[
 	{id:'store',icon:'🛒',label:'Store'},
 	{id:'buildings',icon:'🏭',label:'Buildings'},
@@ -455,15 +455,20 @@ Portrait.select=function(tab){
 	var t=TABS.filter(function(x){return x.id===tab;})[0];
 	if (!t) return;
 	if (tab==='legacy') {l('legacyButton').click();return;}//opens the game's own ascend prompt
+	//each tab keeps its own scroll position (menus share #centerArea with the buildings); save it
+	//before Game.ShowMenu below, which already switches the highlighted tab
+	var center=document.getElementById('centerArea');
+	if (center && Portrait.tab!=='store') Portrait.scrolls[Portrait.tab]=center.scrollTop;
 	if (t.menu) {if (Game.onMenu!==t.menu) Game.ShowMenu(t.menu);}
 	else
 	{
 		if (tab==='buildings' && Game.onMenu) Game.ShowMenu(Game.onMenu);//close the open menu to reveal the buildings
 		else PlaySound('snd/clickOn2.mp3');
 	}
+	var again=(Portrait.lastTab===tab);
 	Portrait.show(tab);
-	var panelEl=document.getElementById(tab==='store'?'sectionRight':'centerArea');
-	if (panelEl && Portrait.lastTab===tab) panelEl.scrollTop=0;//tapping the active tab again scrolls to top
+	if (center && tab!=='store') center.scrollTop=again?0:(Portrait.scrolls[tab]||0);
+	if (again && tab==='store') l('sectionRight').scrollTop=0;//tapping the active tab again scrolls to top
 	Portrait.lastTab=tab;
 };
 Portrait.syncWithMenu=function(){
@@ -483,8 +488,8 @@ Portrait.setActive=function(on){
 		Portrait.show(Game.onMenu?Game.onMenu:Portrait.tab);
 		if (!uiState.helpSeen && !/[?&]nohelp=1\b/.test(window.location.search)) setTimeout(Portrait.openHelp,800);//first launch
 	}
-	//the top bar (DashNet links) is hidden in portrait; game code offsets the mouse by its height
-	if (typeof TopBarOffset!=='undefined') TopBarOffset=(on || App)?0:32;
+	//game code offsets the mouse by the top bar's height
+	if (typeof TopBarOffset!=='undefined') TopBarOffset=0;//#topBar is hidden on iOS (see ios-fixes.css)
 	//sugar lumps live in the buildings header on desktop; in portrait keep them on the cookie panel
 	var lumps=document.getElementById('lumps');
 	if (lumps)
@@ -564,7 +569,8 @@ Portrait.buildHelpButton=function(){
 	b.id='iosHelpButton';
 	b.setAttribute('role','button');
 	b.setAttribute('aria-label','Help');
-	b.textContent='?';
+	var ja=false;try {ja=window.localStorage.getItem('CookieClickerLang')==='JA';} catch(e){}
+	b.innerHTML='<span class="iosHelpIcon">\uD83D\uDCD6</span><span>'+(ja?'遊び方':'Help')+'</span>';
 	b.addEventListener('click',function(e){e.preventDefault();PlaySound('snd/tick.mp3');Portrait.openHelp();});
 	l('sectionLeft').appendChild(b);
 };

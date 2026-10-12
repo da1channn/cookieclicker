@@ -793,6 +793,32 @@ const EVALS=[
 	await g.context.close();
 	return {pass:stats>100&&info===0&&Math.abs(back-stats)<=2,detail:{statsScrolled:stats,infoOpenedAt:info,statsRestored:back}};
 }],
+['T55','progress survives a relaunch: 60s autosave, save on leaving the app, and nothing saved if autosave is off','P0 save',async()=>{
+	const g=await openGame();
+	//1) the game's own autosave fires on the next 60-second tick
+	const auto=await g.page.evaluate(async()=>{
+		localStorage.removeItem(Game.SaveTo);
+		Game.cookies=111111;Game.ObjectsById[0].getFree(3);
+		Game.T=Game.fps*60*Math.ceil((Game.T+Game.fps*11)/(Game.fps*60))-2;//two ticks before a 60s boundary
+		await new Promise(r=>setTimeout(r,800));
+		return !!localStorage.getItem(Game.SaveTo);
+	});
+	//2) relaunch restores it
+	await g.page.reload();await g.page.waitForFunction(()=>window.Game&&Game.ready&&Game.T>10,null,{timeout:60000});
+	const restored=await g.page.evaluate(()=>({cookies:Math.floor(Game.cookies),cursors:Game.ObjectsById[0].amount}));
+	//3) leaving the app saves the latest state immediately (no waiting for the next tick)
+	await g.page.evaluate(()=>{Game.T=Math.max(Game.T,Game.fps*20);Game.cookies=222222;Game.ObjectsById[1].getFree(4);
+		Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>'hidden'});document.dispatchEvent(new Event('visibilitychange'));delete document.visibilityState;});
+	await g.page.reload();await g.page.waitForFunction(()=>window.Game&&Game.ready&&Game.T>10,null,{timeout:60000});
+	const afterHide=await g.page.evaluate(()=>({cookies:Math.floor(Game.cookies),grandmas:Game.ObjectsById[1].amount}));
+	//4) with autosave turned off in Options, leaving the app does not save either (respects the player's setting)
+	const respected=await g.page.evaluate(()=>{Game.prefs.autosave=0;const before=localStorage.getItem(Game.SaveTo);Game.T=Math.max(Game.T,Game.fps*20);Game.cookies=333333;
+		Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>'hidden'});document.dispatchEvent(new Event('visibilitychange'));delete document.visibilityState;
+		return localStorage.getItem(Game.SaveTo)===before;});
+	await g.context.close();
+	const ok=auto&&restored.cookies>=111111&&restored.cursors===3&&afterHide.cookies>=222222&&afterHide.grandmas===4&&respected;
+	return {pass:ok,detail:{autosaveWrote:auto,restoredAfterRelaunch:restored,restoredAfterLeavingApp:afterHide,autosaveOffRespected:respected}};
+}],
 ['T28','no JavaScript errors during the whole suite','P0 stability',async()=>{
 	const g=await openGame();await sleep(2000);await g.context.close();
 	const mine=pageErrors.filter(e=>e.startsWith(TARGET));

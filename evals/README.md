@@ -124,3 +124,4 @@ this way so far and fixed:
 - the DashNet/Steam link bar wrapped over the game in landscape (now hidden on iOS)
 - the bakery name was cut off and the news ticker squeezed to one character per line in landscape
 - menus opened half-scrolled when switching from another scrolled menu
+| T55 | progress survives a relaunch: 60s autosave writes, relaunch restores, leaving the app saves the latest state, autosave-off is respected |

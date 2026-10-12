@@ -315,13 +315,19 @@ var keyboardSeen=false;
 var textFocused=function(){var a=document.activeElement;return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));};
 document.addEventListener('focusin',function(){if (textFocused()) keyboardSeen=true;});
 var forceStandalone=/[?&]iosstandalone=1\b/.test(window.location.search);//test hook
+var fullHeights={};//width -> tallest height seen before any keyboard (per orientation)
 var layoutSize=function(){
 	var W=window.innerWidth,H=window.innerHeight,shrunk=false;
-	if ((standalone || forceStandalone) && keyboardSeen && !textFocused() && /iPhone|iPod/.test(navigator.userAgent) && window.screen && screen.width && screen.height)
+	if (!keyboardSeen) {fullHeights[W]=Math.max(fullHeights[W]||0,H);return {W:W,H:H,shrunk:false};}
+	if ((standalone || forceStandalone) && !textFocused() && /iPhone|iPod/.test(navigator.userAgent))
 	{
-		var short=Math.min(screen.width,screen.height),long=Math.max(screen.width,screen.height);
-		var expectedH=(W<=short+2)?long:short;
-		if (H<expectedH-2 && expectedH-H<500) {H=expectedH;shrunk=true;}
+		var expectedH=fullHeights[W];
+		if (!expectedH && window.screen && screen.width && screen.height)
+		{
+			var short=Math.min(screen.width,screen.height),long=Math.max(screen.width,screen.height);
+			expectedH=(W<=short+2)?long:short;
+		}
+		if (expectedH && H<expectedH-2 && expectedH-H<500) {H=expectedH;shrunk=true;}
 	}
 	return {W:W,H:H,shrunk:shrunk};
 };

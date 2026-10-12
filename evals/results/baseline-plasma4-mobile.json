@@ -3,8 +3,8 @@
  "target": "mobile.html",
  "date": "2026-10-12T15:04:56.591Z",
  "passed": 18,
- "total": 34,
- "score": 0.529,
+ "total": 37,
+ "score": 0.486,
  "results": [
   {
    "pass": false,
@@ -490,6 +490,37 @@
    "name": "no JavaScript errors during the whole suite",
    "group": "P0 stability",
    "ms": 2880
+  },
+  {
+   "pass": false,
+   "detail": "no copy button",
+   "id": "T35",
+   "name": "Export prompt: one tap copies the save code to the clipboard",
+   "group": "P1 save",
+   "ms": 1369
+  },
+  {
+   "pass": false,
+   "detail": "no paste button",
+   "id": "T36",
+   "name": "Import prompt: one tap pastes the save code from the clipboard",
+   "group": "P1 save",
+   "ms": 1308
+  },
+  {
+   "pass": false,
+   "detail": {
+    "control": 1618,
+    "stuck": {
+     "h": 1294,
+     "body": "",
+     "inner": 1294
+    }
+   },
+   "id": "T37",
+   "name": "standalone: viewport stuck small after the keyboard (iOS 26 bug) -> game still uses the full screen",
+   "group": "P1 resume",
+   "ms": 5103
   }
  ]
 }

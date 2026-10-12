@@ -21,7 +21,7 @@
 (function(){
 'use strict';
 
-var DEFAULTS={fastTap:true,zoomGuard:true,layout:true,audio:true,lifecycle:true,debug:false};
+var DEFAULTS={fastTap:true,zoomGuard:true,layout:true,portraitUI:true,audio:true,lifecycle:true,debug:false};
 var CONFIG={};
 (function(){
 	var stored={};
@@ -150,6 +150,7 @@ if (CONFIG.fastTap && window.PointerEvent)
 	document.addEventListener('pointerdown',function(e){
 		lastPointerType=e.pointerType;
 		if (e.pointerType!=='touch') return;
+		if (CONFIG.layout) setMouse(e.clientX,e.clientY);//tooltips opened by touchstart are placed from this
 		var el=fastTargetOf(e.target);
 		if (!el) return;
 		if (el.classList.contains('shimmer'))
@@ -333,29 +334,40 @@ var layoutSize=function(){
 };
 IOSFixes.layoutSize=layoutSize;
 
+var PORTRAIT_LOGICAL_W=375;//portrait UI is laid out for this width, then scaled to the screen
+var isPortraitLayout=function(w,h){return CONFIG.portraitUI && w<h && w<600;};
+
 var installLayout=function(){
 	var origResize=Game.resize;
 	Game.resize=function(){
 		IOSFixes.stats.resizes++;
-		origResize.apply(this,arguments);
 		var wrapper=Game.wrapper;
 		var ins=readInsets();
 		var size=layoutSize(),W=size.W,H=size.H;
+		//safe area = what the game may use
+		var w=Math.max(1,W-ins.l-ins.r);
+		var h=Math.max(1,H-ins.t-ins.b);
+		var portrait=isPortraitLayout(w,h);
+		Portrait.setActive(portrait);//switch CSS + top bar before anything measures the layout
+		origResize.apply(this,arguments);
 		lastSignature=signature();
 		document.body.style.height=size.shrunk?H+'px':'';
 		document.body.style.bottom=size.shrunk?'auto':'';
 		if (size.shrunk) log('standalone viewport stuck at',window.innerHeight,'- using screen height',H);
-		if (!(ins.t||ins.r||ins.b||ins.l) && !size.shrunk)
+		if (!(ins.t||ins.r||ins.b||ins.l) && !size.shrunk && !portrait)
 		{
 			wrapper.style.left='';
 			wrapper.style.top='';
 			return;
 		}
-		//same formula as Game.resize, applied to the safe area instead of the whole window
-		var w=Math.max(1,W-ins.l-ins.r);
-		var h=Math.max(1,H-ins.t-ins.b);
-		var zoom=Game.zoom||1;
-		var scale=Math.min(w/Math.max(800*zoom,w),h/Math.max(200*zoom,h))*zoom;
+		var scale;
+		if (portrait) scale=w/PORTRAIT_LOGICAL_W;
+		else
+		{
+			//same formula as Game.resize, applied to the safe area instead of the whole window
+			var zoom=Game.zoom||1;
+			scale=Math.min(w/Math.max(800*zoom,w),h/Math.max(200*zoom,h))*zoom;
+		}
 		Game.windowW=Math.floor(w/scale);
 		Game.windowH=Math.floor(h/scale);
 		wrapper.style.left=ins.l+'px';
@@ -373,7 +385,7 @@ var installLayout=function(){
 			wrapper.style.height=h+'px';
 		}
 		Game.scale=scale;
-		//the original already ran these against the full-window size; canvases must match the safe area
+		//the original already ran these against the full-window size; canvases must match the final layout
 		for (var i in Game.Objects)
 		{
 			var me=Game.Objects[i];
@@ -381,9 +393,154 @@ var installLayout=function(){
 			if (me.minigame && me.minigame.onResize) me.minigame.onResize();
 		}
 		for (var j=0;j<Game.onResizeCallbacks.length;j++) Game.onResizeCallbacks[j](w,h);
-		log('resize',W+'x'+H,'insets',JSON.stringify(ins),'scale',scale.toFixed(4),'logical',Game.windowW+'x'+Game.windowH);
+		log('resize',W+'x'+H,'insets',JSON.stringify(ins),portrait?'portrait UI':'desktop UI','scale',scale.toFixed(4),'logical',Game.windowW+'x'+Game.windowH);
 	};
 	Game.resize();
+};
+
+/*=====================================================================================
+PORTRAIT UI
+The desktop layout is three columns (cookie | buildings+menus | store) 800px wide,
+which on a phone held upright means ~0.45x tiny text and 20px buttons. In portrait:
+  - cookie on top, one big panel below, a thumb-reachable tab bar at the bottom
+    (Store / Buildings / Stats / Options / Info / Legacy) replacing the small corner buttons
+  - laid out at 375 logical px, so everything is ~2x bigger than the desktop layout
+  - tooltips are centred and placed above/below the finger instead of beside the store
+Same DOM, same handlers: tabs just call the game's own buttons / Game.ShowMenu.
+Landscape keeps the original layout.
+=======================================================================================*/
+var Portrait=IOSFixes.portrait={active:false,tab:'store',bar:null};
+var TABS=[
+	{id:'store',icon:'🛒',label:'Store'},
+	{id:'buildings',icon:'🏭',label:'Buildings'},
+	{id:'stats',icon:'📊',label:'Stats',menu:'stats'},
+	{id:'prefs',icon:'⚙️',label:'Options',menu:'prefs'},
+	{id:'log',icon:'ℹ️',label:'Info',menu:'log'},
+	{id:'legacy',icon:'👼',label:'Legacy'}
+];
+var tr=function(s){try {return (typeof loc==='function')?loc(s):s;} catch(e){return s;}};
+Portrait.buildBar=function(){
+	if (Portrait.bar) return Portrait.bar;
+	var bar=document.createElement('div');
+	bar.id='iosTabBar';
+	bar.setAttribute('role','tablist');
+	TABS.forEach(function(t){
+		var b=document.createElement('div');
+		b.className='iosTab';
+		b.id='iosTab-'+t.id;
+		b.setAttribute('role','tab');
+		b.innerHTML='<span class="iosTabIcon">'+t.icon+'</span><span class="iosTabLabel">'+tr(t.label)+'</span>';
+		b.addEventListener('click',function(e){e.preventDefault();Portrait.select(t.id);});
+		bar.appendChild(b);
+	});
+	Game.l.appendChild(bar);
+	Portrait.bar=bar;
+	return bar;
+};
+Portrait.show=function(tab){
+	Portrait.tab=tab;
+	var panel=(tab==='store')?'store':'middle';
+	docEl.classList.toggle('ios-tab-store',panel==='store');
+	docEl.classList.toggle('ios-tab-middle',panel==='middle');
+	TABS.forEach(function(t){var b=document.getElementById('iosTab-'+t.id);if (b) b.classList.toggle('on',t.id===tab);});
+};
+Portrait.select=function(tab){
+	if (!gameReady()) return;
+	var t=TABS.filter(function(x){return x.id===tab;})[0];
+	if (!t) return;
+	if (tab==='legacy') {l('legacyButton').click();return;}//opens the game's own ascend prompt
+	if (t.menu) {if (Game.onMenu!==t.menu) Game.ShowMenu(t.menu);}
+	else
+	{
+		if (tab==='buildings' && Game.onMenu) Game.ShowMenu(Game.onMenu);//close the open menu to reveal the buildings
+		else PlaySound('snd/clickOn2.mp3');
+	}
+	Portrait.show(tab);
+	var panelEl=document.getElementById(tab==='store'?'sectionRight':'centerArea');
+	if (panelEl && Portrait.lastTab===tab) panelEl.scrollTop=0;//tapping the active tab again scrolls to top
+	Portrait.lastTab=tab;
+};
+Portrait.syncWithMenu=function(){
+	if (!Portrait.active) return;
+	if (Game.onMenu) Portrait.show(Game.onMenu);
+	else if (Portrait.tab==='stats' || Portrait.tab==='prefs' || Portrait.tab==='log') Portrait.show('buildings');
+};
+Portrait.setActive=function(on){
+	if (on===Portrait.active && Portrait.bar) return;
+	Portrait.active=on;
+	docEl.classList.toggle('ios-portrait',on);
+	if (on)
+	{
+		Portrait.buildBar();
+		Portrait.show(Game.onMenu?Game.onMenu:Portrait.tab);
+	}
+	//the top bar (DashNet links) is hidden in portrait; game code offsets the mouse by its height
+	if (typeof TopBarOffset!=='undefined') TopBarOffset=(on || App)?0:32;
+	//sugar lumps live in the buildings header on desktop; in portrait keep them on the cookie panel
+	var lumps=document.getElementById('lumps');
+	if (lumps)
+	{
+		var home=on?document.getElementById('sectionLeft'):document.getElementById('comments');
+		if (home && lumps.parentNode!==home) home.appendChild(lumps);
+	}
+	if (!on && Game.tooltip && Game.tooltip.tta) Game.tooltip.tta.style.transform='';
+	log('portrait UI',on?'on':'off');
+};
+//a dot on the Store tab when something there is affordable, so you know when to switch back
+Portrait.updateBadge=function(){
+	if (!Portrait.active || !Portrait.bar || !gameReady()) return;
+	var any=false;
+	try {
+		for (var i=0;i<Game.ObjectsById.length && !any;i++) {var o=Game.ObjectsById[i];if (!o.locked && o.getPrice()<=Game.cookies) any=true;}
+		for (var j=0;j<Game.UpgradesInStore.length && !any;j++) {var u=Game.UpgradesInStore[j];if (u.pool!=='toggle' && u.pool!=='tech' && u.canBuy()) any=true;}
+	} catch(e){}
+	var tab=document.getElementById('iosTab-store');
+	if (tab) tab.classList.toggle('badge',any && Portrait.tab!=='store');
+};
+var installPortrait=function(){
+	setInterval(Portrait.updateBadge,1000);
+	//tab highlight follows menus opened by the game itself
+	var origShowMenu=Game.ShowMenu;
+	Game.ShowMenu=function(){var r=origShowMenu.apply(this,arguments);Portrait.syncWithMenu();return r;};
+	//tooltips: desktop puts store tooltips left of the 300px store column, off-screen in portrait
+	var origUpdate=Game.tooltip.update;
+	Game.tooltip.update=function(){
+		var r=origUpdate.apply(this,arguments);
+		if (Portrait.active && this.on && this.tta.style.display!=='none')
+		{
+			var tt=this.tt,tta=this.tta;
+			var W=Game.windowW,H=Game.windowH-60;//keep clear of the tab bar
+			//desktop tooltips are up to ~400px wide: shrink to fit the screen width
+			var fit=Math.min(1,(W-8)/Math.max(1,tt.offsetWidth));
+			tta.style.transformOrigin='0 0';
+			tta.style.transform=fit<1?'scale('+fit+')':'';
+			var width=tt.offsetWidth*fit,height=tt.offsetHeight*fit;
+			var X=Math.max(4,Math.floor((W-width)/2));
+			var fingerY=Game.mouseY;
+			var Y=(fingerY>H/2)?fingerY-height-40:fingerY+40;
+			Y=Math.max(4,Math.min(H-height-4,Y));
+			tta.style.left=X+'px';tta.style.right='auto';
+			tta.style.top=Y+'px';tta.style.bottom='auto';
+			tt.style.left='0px';tt.style.top='0px';tt.style.right='auto';tt.style.bottom='auto';
+		}
+		return r;
+	};
+	//golden cookies spawn between the left edge and "300px before the store"; in a 375px wide
+	//portrait layout that is always x=0. Spread them over the screen instead (position only).
+	var gt=Game.shimmerTypes && Game.shimmerTypes.golden;
+	if (gt && gt.initFunc)
+	{
+		var origInit=gt.initFunc;
+		gt.initFunc=function(me){
+			var r=origInit.apply(this,arguments);
+			if (Portrait.active && me && me.l)
+			{
+				me.x=Math.floor(8+Math.random()*Math.max(0,Game.windowW-112));
+				me.l.style.left=me.x+'px';
+			}
+			return r;
+		};
+	}
 };
 
 var resetScroll=function(){
@@ -606,7 +763,7 @@ var installed=false;
 var install=function(){
 	if (installed) return;
 	installed=true;
-	if (CONFIG.layout) installLayout();
+	if (CONFIG.layout) {installPortrait();installLayout();}
 	if (CONFIG.audio) {try {installAudio();} catch(e){log('audio install failed',e);}}
 	installSaveTransfer();
 	if ('serviceWorker' in navigator && /^https?:$/.test(window.location.protocol) && !/[?&]nosw=1\b/.test(window.location.search))

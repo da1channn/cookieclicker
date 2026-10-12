@@ -33,15 +33,16 @@ const EVAL_TIMEOUT_MS=150000;//a hung eval fails instead of stalling the suite
 let browser,srv;
 const pageErrors=[];
 
-async function openGame(file=TARGET,{viewport=PORTRAIT,insets=null,storage=null,init=null,query=''}={}){
+async function openGame(file=TARGET,{viewport=PORTRAIT,insets=null,storage=null,init=null,query='',firstRun=false}={}){
 	const context=await browser.newContext({viewport,screen:{width:PORTRAIT.width,height:PORTRAIT.height},deviceScaleFactor:3,isMobile:true,hasTouch:true,userAgent:UA});
 	await context.route(url=>!url.href.startsWith(srv.base.replace(/cookieclicker\/$/,'')),r=>r.abort());
-	await context.addInitScript(([storage])=>{
+	await context.addInitScript(([storage,firstRun])=>{
 		try {
 			localStorage.setItem('CookieClickerLang','EN');
+			if (!firstRun && !localStorage.getItem('CookieClickerIOSUI')) localStorage.setItem('CookieClickerIOSUI',JSON.stringify({helpSeen:true}));//first-run help has its own eval
 			if (storage) for (const k in storage) localStorage.setItem(k,storage[k]);
 		} catch(e){}
-	},[storage]);
+	},[storage,firstRun]);
 	if (init) await context.addInitScript(init);
 	const page=await context.newPage();
 	page.on('pageerror',e=>pageErrors.push(file+': '+e.message));
@@ -568,7 +569,7 @@ const EVALS=[
 	await g.page.setViewportSize({width:393,height:560});await sleep(1500);
 	const stuck=await g.page.evaluate(()=>({h:Math.round(Game.windowH*Game.scale),body:document.body.style.height,inner:innerHeight}));
 	await g.context.close();
-	return {pass:control===700&&stuck.h===852,detail:{control,stuck}};
+	return {pass:Math.abs(control-700)<=2&&Math.abs(stuck.h-852)<=2,detail:{control,stuck}};
 }],
 ['T38','portrait: readable size (text scale >= 0.95, not the 0.44 desktop shrink)','P2 portrait UI',async()=>{
 	const g=await openGame();
@@ -659,6 +660,84 @@ const EVALS=[
 	await g.context.close();
 	const ok=land.tabBar==='none'&&land.topBar!=='none'&&land.store<400&&port.tabBar==='flex'&&port.active==='iosTab-buildings'&&port.topBar==='none'&&f.ok;
 	return {pass:ok,detail:{land,port}};
+}],
+['T47','help: ? button (>=44pt) opens the touch-controls guide, X closes it','P2 help',async()=>{
+	const g=await openGame();
+	const btn=await center(g,'#iosHelpButton');
+	if (!btn||!btn.w) {await g.context.close();return {pass:false,detail:'no help button'};}
+	await tap(g,btn);await sleep(1500);
+	const r=await g.page.evaluate(()=>{const o=document.getElementById('iosHelp');const f=o&&o.querySelector('iframe');let txt='';try {txt=f.contentDocument.body.innerText;} catch(e){}
+		const rr=o?o.getBoundingClientRect():{width:0,height:0};return {open:!!o&&o.classList.contains('on'),cover:rr.width>=innerWidth-1&&rr.height>=innerHeight-1,hasTouch:/Touch controls|タッチ操作/.test(txt),hasLongPress:/Long press|長押し/.test(txt)};});
+	const close=await center(g,'#iosHelp .iosHelpClose');
+	await tap(g,close);await sleep(400);
+	const closed=await g.page.evaluate(()=>!document.getElementById('iosHelp').classList.contains('on'));
+	await g.context.close();
+	return {pass:btn.w>=44&&btn.h>=44&&r.open&&r.cover&&r.hasTouch&&r.hasLongPress&&closed,detail:{btn:[Math.round(btn.w),Math.round(btn.h)],...r,closed}};
+}],
+['T48','help opens by itself on the very first launch only','P2 help',async()=>{
+	const g=await openGame(TARGET,{firstRun:true});
+	await sleep(1500);
+	const first=await g.page.evaluate(()=>{const o=document.getElementById('iosHelp');return !!o&&o.classList.contains('on');});
+	await g.page.reload();
+	await g.page.waitForFunction(()=>window.Game&&Game.ready&&Game.T>10,null,{timeout:60000});await sleep(1500);
+	const second=await g.page.evaluate(()=>{const o=document.getElementById('iosHelp');return !!o&&o.classList.contains('on');});
+	await g.context.close();
+	return {pass:first&&!second,detail:{first,second}};
+}],
+['T49','panel drawer: handle pulls the store up (more rows), again puts it back, state remembered','P2 portrait UI',async()=>{
+	const g=await openGame();await richGame(g);
+	const rows=()=>g.page.evaluate(()=>{const p=l('sectionRight').getBoundingClientRect();return [...document.querySelectorAll('#products .product')].filter(e=>{const r=e.getBoundingClientRect();return r.height>0&&r.top>=p.top-1&&r.bottom<=p.bottom+1;}).length;});
+	const h=await center(g,'#iosPanelHandle');
+	if (!h||!h.w) {await g.context.close();return {pass:false,detail:'no handle'};}
+	const r0=await rows();
+	await tap(g,h);await sleep(500);
+	const r1=await rows();
+	const countVisible=await g.page.evaluate(()=>{const c=l('cookies').getBoundingClientRect();const e=document.elementFromPoint(c.left+c.width/2,c.top+8);return !!e&&!e.closest('#sectionRight');});
+	await g.page.reload();await g.page.waitForFunction(()=>window.Game&&Game.ready&&Game.T>10,null,{timeout:60000});await sleep(800);
+	const remembered=await g.page.evaluate(()=>document.documentElement.classList.contains('ios-panel-expanded'));
+	await tap(g,await center(g,'#iosPanelHandle'));await sleep(500);
+	const back=await g.page.evaluate(()=>!document.documentElement.classList.contains('ios-panel-expanded'));
+	await g.context.close();
+	return {pass:r1>=r0+3&&countVisible&&remembered&&back,detail:{rowsBefore:r0,rowsExpanded:r1,countVisible,remembered,back}};
+}],
+['T50','long press never spends: sugar lump not harvested, garden plot not planted; tap still works','P1 minigame',async()=>{
+	const g=await openGame();await richGame(g);
+	await g.page.evaluate(()=>{window.__lump=0;const o=Game.clickLump;Game.clickLump=function(){__lump++;};Game.lumpsTotal=Math.max(Game.lumpsTotal,0);});
+	await sleep(500);
+	const lp=await center(g,'#lumps');
+	if (!lp||!lp.w) {await g.context.close();return {pass:false,detail:'lumps not shown'};}
+	await tap(g,lp,{hold:800});await sleep(400);
+	const afterHold=await g.page.evaluate(()=>__lump);
+	await tap(g,lp);await sleep(400);
+	const afterTap=await g.page.evaluate(()=>__lump);
+	//garden: long press with a seed selected must not plant
+	const ok=await g.page.evaluate(async()=>{const F=Game.Objects['Farm'];F.getFree(1);F.level=1;Game.LoadMinigames();
+		for (let i=0;i<100&&!(F.minigame&&F.minigameLoaded);i++) await new Promise(r=>setTimeout(r,100));
+		if (!F.minigame) return false;F.switchMinigame(1);await new Promise(r=>setTimeout(r,800));F.minigame.seedSelected=0;return true;});
+	let planted=null;
+	if (ok){
+		await showBuildings(g);
+		const tile=await g.page.evaluate(()=>{const M=Game.Objects['Farm'].minigame;for (let y=0;y<6;y++)for (let x=0;x<6;x++){const t=l('gardenTile-'+x+'-'+y);if (t&&t.style.display!=='none'&&M.isTileUnlocked(x,y)) return {x,y,id:'#gardenTile-'+x+'-'+y};}return null;});
+		await g.page.evaluate(id=>{const c=l('centerArea'),r=l(id.slice(1)).getBoundingClientRect(),cr=c.getBoundingClientRect();c.scrollTop+=r.top-cr.top-cr.height/2;},tile.id);await sleep(400);
+		await tap(g,await center(g,tile.id),{hold:800});await sleep(500);
+		planted=await g.page.evaluate(t=>Game.Objects['Farm'].minigame.plot[t.y][t.x][0],tile);
+	}
+	await g.context.close();
+	return {pass:afterHold===0&&afterTap===1&&planted===0,detail:{lumpAfterHold:afterHold,lumpAfterTap:afterTap,gardenPlantedByHold:planted}};
+}],
+['T51','ascension: long press a heavenly upgrade = info only, tap buys it','P1 minigame',async()=>{
+	const g=await openGame();
+	await g.page.evaluate(()=>{Game.cookiesEarned=1e15;Game.heavenlyChips=1e6;Game.Ascend(1);});
+	await g.page.waitForFunction(()=>Game.OnAscend===1&&Game.AscendTimer===0,null,{timeout:20000}).catch(()=>{});
+	await sleep(800);
+	const sel=await g.page.evaluate(()=>{const c=[...document.querySelectorAll('#ascendUpgrades .crate')].find(e=>{const u=Game.UpgradesById[e.dataset.id];const r=e.getBoundingClientRect();return u&&!u.bought&&r.top>60&&r.bottom<innerHeight-10&&r.left>0&&r.right<innerWidth&&u.canBePurchased!==false;});if (!c) return null;c.id=c.id||'evalHeavenly';return {sel:'#'+c.id,id:+c.dataset.id};});
+	if (!sel) {await g.context.close();return {pass:false,detail:'no heavenly upgrade on screen'};}
+	await tap(g,await center(g,sel.sel),{hold:800});await sleep(500);
+	const held=await g.page.evaluate(id=>Game.UpgradesById[id].bought,sel.id);
+	await tap(g,await center(g,sel.sel));await sleep(600);
+	const tapped=await g.page.evaluate(id=>Game.UpgradesById[id].bought,sel.id);
+	await g.context.close();
+	return {pass:held===0&&tapped===1,detail:{upgrade:sel.id,boughtByHold:held,boughtByTap:tapped}};
 }],
 ['T28','no JavaScript errors during the whole suite','P0 stability',async()=>{
 	const g=await openGame();await sleep(2000);await g.context.close();

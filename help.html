@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>遊び方 – Cookie Clicker for iPhone</title>
+<link rel="apple-touch-icon" href="img/ios/apple-touch-icon.png">
+<style>
+:root{--bg:#120b05;--panel:#1f150c;--line:rgba(255,200,120,0.22);--text:#f3e6d3;--muted:#b9a58c;--accent:#ffbf4d;--link:#8fc7ff;}
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+body{margin:0;background:var(--bg) url(img/darkNoise.jpg);color:var(--text);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif;
+	padding:calc(env(safe-area-inset-top) + 8px) calc(env(safe-area-inset-right) + 16px) calc(env(safe-area-inset-bottom) + 32px) calc(env(safe-area-inset-left) + 16px);}
+main{max-width:640px;margin:0 auto;}
+h1{font-size:24px;margin:8px 0 4px;display:flex;align-items:center;gap:10px;}
+h1 img{width:40px;height:40px;}
+h2{font-size:19px;margin:28px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--line);color:var(--accent);}
+h3{font-size:16px;margin:18px 0 6px;}
+p,li{margin:6px 0;}
+ul{padding-left:20px;}
+.lead{color:var(--muted);margin-top:0;}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0;}
+table{width:100%;border-collapse:collapse;margin:8px 0;font-size:15px;}
+th,td{text-align:left;vertical-align:top;padding:8px 6px;border-bottom:1px solid var(--line);}
+th{color:var(--muted);font-weight:600;font-size:13px;}
+td:first-child{white-space:nowrap;font-weight:600;padding-right:10px;}
+kbd{display:inline-block;background:#3a2a1a;border:1px solid var(--line);border-radius:6px;padding:0 6px;font:inherit;font-size:14px;}
+.screen{font:13px/1.35 ui-monospace,Menlo,monospace;background:#0b0703;border:1px solid var(--line);border-radius:12px;padding:10px;white-space:pre;overflow-x:auto;color:#e9d8bf;}
+.tip{border-left:3px solid var(--accent);padding:2px 0 2px 10px;color:var(--muted);}
+a{color:var(--link);}
+.mock{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#0b0703;max-width:320px;margin:10px auto;font-size:13px;}
+.mock div{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line);}
+.mock .m-cookie{flex-direction:column;align-items:stretch;background:linear-gradient(#3b2a18,#1d130a);padding:8px 10px 14px;}
+.mock .m-cookie .row{display:flex;justify-content:space-between;align-items:center;border:0;padding:0;}
+.mock .m-big{font-size:46px;text-align:center;border:0;justify-content:center;padding:4px 0;}
+.mock .m-handle{justify-content:center;padding:4px;background:#2a1d12;}
+.mock .m-handle span{width:44px;height:6px;border-radius:3px;background:#e9c891;display:block;}
+.mock .m-panel{min-height:64px;color:var(--muted);}
+.mock .m-tabs{justify-content:space-around;background:#1b120a;border-bottom:0;font-size:18px;}
+.mock .note{color:var(--accent);font-size:12px;margin-left:auto;}
+
+nav.toc{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0;}
+nav.toc a{display:inline-block;padding:6px 10px;border:1px solid var(--line);border-radius:999px;text-decoration:none;color:var(--text);font-size:14px;background:var(--panel);}
+.lang{float:right;font-size:14px;}
+[data-lang]{display:none;}
+html[data-show="ja"] [data-lang="ja"],html[data-show="en"] [data-lang="en"]{display:block;}
+html.embed body{padding-top:12px;}
+</style>
+<script>
+(function(){
+	var q=location.search,lang='';
+	var m=/[?&]lang=(ja|en)\b/.exec(q);
+	if (m) lang=m[1];
+	if (!lang) {try {var g=localStorage.getItem('CookieClickerLang');if (g) lang=(g==='JA')?'ja':'en';} catch(e){}}
+	if (!lang) lang=/^ja\b/i.test(navigator.language||'')?'ja':'en';
+	document.documentElement.setAttribute('data-show',lang);
+	document.documentElement.lang=lang;
+	if (/[?&]embed=1\b/.test(q)) document.documentElement.classList.add('embed');
+})();
+</script>
+</head>
+<body>
+<main>
+
+<!-- ===================================================== 日本語 -->
+<section data-lang="ja">
+<a class="lang" href="?lang=en">English</a>
+<h1><img src="img/ios/apple-touch-icon.png" alt="">遊び方（iPhone版）</h1>
+<p class="lead">このページは、ゲーム内の左上にある <kbd>?</kbd> ボタンからいつでも開けます。</p>
+<nav class="toc">
+	<a href="#ja-screen">画面</a><a href="#ja-touch">タッチ操作</a><a href="#ja-store">ショップ</a><a href="#ja-mini">ミニゲーム</a><a href="#ja-ascend">昇天</a><a href="#ja-save">セーブ</a><a href="#ja-trouble">困ったとき</a>
+</nav>
+
+<h2 id="ja-screen">画面の見方（縦向き）</h2>
+<div class="mock" aria-label="画面の見取り図">
+<div class="m-cookie"><div class="row"><kbd>?</kbd><span>12.3 million クッキー</span><span class="note">枚数・毎秒</span></div>
+<div class="m-big">🍪</div>
+<div class="row"><span>🟣 砂糖玉</span><span class="note">クッキーをタップ</span></div></div>
+<div class="m-handle"><span></span></div>
+<div class="m-panel">ショップ／建物のパネル<span class="note">↑つまみをタップで拡大</span></div>
+<div class="m-tabs"><span>🛒</span><span>🏭</span><span>📊</span><span>⚙️</span><span>ℹ️</span><span>👼</span></div>
+</div>
+<table>
+<tr><th>タブ</th><th>中身</th></tr>
+<tr><td>🛒 ショップ</td><td>建物とアップグレードを買う。買えるものがあると赤い点が付きます</td></tr>
+<tr><td>🏭 建物</td><td>建物ごとの画面、ミニゲーム（菜園・パンテオン・魔導書・株式市場）、ニュース</td></tr>
+<tr><td>📊 記録</td><td>統計・実績・アップグレード一覧</td></tr>
+<tr><td>⚙️ オプション</td><td>設定、セーブのエクスポート／インポート、言語</td></tr>
+<tr><td>ℹ️ 情報</td><td>バージョン情報・更新履歴</td></tr>
+<tr><td>👼 遺産</td><td>昇天（リセットして天国チップを得る）の確認画面を開く</td></tr>
+</table>
+<p class="tip">同じタブをもう一度押すと、パネルの一番上に戻ります。iPhoneを横向きにすると、PC版と同じ3列の画面になります。</p>
+
+<h2 id="ja-touch">タッチ操作</h2>
+<table>
+<tr><th>操作</th><th>動作</th></tr>
+<tr><td>タップ</td><td>押す・買う・収穫する。指を離した瞬間に反応します</td></tr>
+<tr><td>長押し（0.5秒）</td><td><b>説明（ツールチップ）を見るだけ</b>。買ったり使ったりはしません</td></tr>
+<tr><td>押したまま指をずらす</td><td>キャンセル（押し間違いに気づいたとき）</td></tr>
+<tr><td>上下にスワイプ</td><td>ショップや建物の一覧をスクロール。スクロール中は何も買いません</td></tr>
+<tr><td>別の場所に触れる</td><td>開いている説明を閉じる</td></tr>
+<tr><td>ピンチ・ダブルタップ</td><td>何も起きません（誤ズーム防止のため無効にしています）</td></tr>
+</table>
+<h3>クッキーの連打</h3>
+<ul>
+<li>1回のタップが1クリックです。押している間はクッキーが少し縮みます。</li>
+<li><b>2本指で交互に叩く</b>と速く押せます。指を離すたびに1回数えます。</li>
+<li>上限は通常のクリックと同じく1秒に約50回です。</li>
+</ul>
+<h3>ゴールデンクッキー</h3>
+<p>画面のどこかに出てきます。<b>指が触れた瞬間</b>に取れるので、動いているものも狙えます。</p>
+
+<h2 id="ja-store">ショップ</h2>
+<ul>
+<li>上の段がアップグレード、下の段が建物です。タップで1回買います。</li>
+<li><kbd>買う</kbd>／<kbd>売る</kbd> と <kbd>1</kbd> <kbd>10</kbd> <kbd>100</kbd> で、まとめ買い・売却を切り替えます。</li>
+<li>値段や効果を見たいときは<b>長押し</b>してください。長押しでは買いません。</li>
+<li>一覧を広く見たいときは、パネル上端の<b>つまみ</b>をタップします。クッキーの上に重なって、パネルが画面の上まで広がります。もう一度タップすると元に戻ります。</li>
+</ul>
+
+<h2 id="ja-mini">建物とミニゲーム（🏭 建物タブ）</h2>
+<ul>
+<li>建物の行の右下にある <kbd>lvl</kbd> で、砂糖玉を使ってレベルを上げます。長押しすると説明だけ表示します。</li>
+<li>レベル1以上の建物には「○○を見る」ボタンが出て、そこからミニゲームを開けます。</li>
+</ul>
+<h3>菜園（農場）</h3>
+<ul><li>種をタップして選び、区画をタップして植えます。植えてある区画をタップすると収穫します。</li><li><b>長押し</b>で育ち具合を確認できます。長押しでは収穫しないので、未熟な作物を誤って抜く心配はありません。</li></ul>
+<h3>パンテオン（神殿）</h3>
+<ul><li>神様をタップして選び、スロットをタップすると配置します。スロットにいる神様をタップしてから別のスロットをタップすると入れ替わります。</li></ul>
+<h3>魔導書（魔法使いの塔）</h3>
+<ul><li>呪文をタップで唱えます。<b>長押し</b>で効果とコストを確認できます（唱えません）。</li></ul>
+<h3>株式市場（銀行）</h3>
+<ul><li>各銘柄の買う／売るボタンをタップします。</li></ul>
+<h3>砂糖玉</h3>
+<ul><li>クッキー画面の左下にあります。<b>長押し</b>で熟し具合を確認し、熟していたらタップで収穫します。長押しでは収穫しません。</li></ul>
+
+<h2 id="ja-ascend">昇天（👼 遺産タブ）</h2>
+<ul>
+<li>確認画面で「昇天」を選ぶと、天国のアップグレード画面に移ります。</li>
+<li>画面は<b>ドラッグ</b>で動かせます。アップグレードは<b>タップ</b>で購入、<b>長押し</b>で説明だけ表示します。</li>
+<li>終わったら画面上部の「転生」ボタンで戻ります。</li>
+</ul>
+
+<h2 id="ja-save">セーブ</h2>
+<ul>
+<li>60秒ごとの自動セーブに加えて、ホーム画面に戻ったり画面をロックしたりした瞬間にも保存します。</li>
+<li><b>Safariとホーム画面アプリは保存場所が別</b>です。移すには、移す元で ⚙️ オプション → 「セーブをエクスポート」 → <kbd>Copy to clipboard</kbd>、移す先で ⚙️ オプション → 「セーブをインポート」 → <kbd>Paste from clipboard</kbd> → 「Load」の順に操作します。</li>
+<li>PC版や公式ブラウザ版のセーブも、同じ手順で読み込めます。</li>
+</ul>
+<h3>ホーム画面に追加する</h3>
+<ol><li>Safariでこのゲームを開く</li><li>共有ボタン →「ホーム画面に追加」</li><li>「Webアプリとして開く」がオンのまま追加</li></ol>
+<p>一度ネットにつないで起動しておくと、次からは機内モードでも遊べます。</p>
+
+<h2 id="ja-trouble">困ったとき</h2>
+<ul>
+<li><b>表示がずれた</b>：iPhoneを一度横にしてから縦に戻す。直らなければアプリを閉じて開き直す。</li>
+<li><b>音が鳴らない</b>：消音スイッチがオンだと鳴りません（他のアプリの音楽を止めない設定のため）。</li>
+<li><b>文字が小さい／大きすぎる</b>：縦向きは大きめの表示です。PC版の配置で遊びたいときは横向きにしてください。</li>
+<li><b>機能を一時的に切る</b>（不具合の切り分け用）：URLの最後に <kbd>?iosoff=portraitUI</kbd>（縦画面UI）、<kbd>?iosoff=fastTap</kbd>（タップ処理）、<kbd>?iosoff=audio</kbd>（効果音）を付けて開きます。</li>
+</ul>
+</section>
+
+<!-- ===================================================== English -->
+<section data-lang="en">
+<a class="lang" href="?lang=ja">日本語</a>
+<h1><img src="img/ios/apple-touch-icon.png" alt="">How to play on iPhone</h1>
+<p class="lead">You can open this page any time from the <kbd>?</kbd> button at the top left of the game.</p>
+<nav class="toc">
+	<a href="#en-screen">Screen</a><a href="#en-touch">Touch</a><a href="#en-store">Store</a><a href="#en-mini">Minigames</a><a href="#en-ascend">Ascend</a><a href="#en-save">Saves</a><a href="#en-trouble">Help</a>
+</nav>
+
+<h2 id="en-screen">The screen (portrait)</h2>
+<div class="mock" aria-label="Screen map">
+<div class="m-cookie"><div class="row"><kbd>?</kbd><span>12.3 million cookies</span><span class="note">count &amp; per second</span></div>
+<div class="m-big">🍪</div>
+<div class="row"><span>🟣 sugar lump</span><span class="note">tap the cookie</span></div></div>
+<div class="m-handle"><span></span></div>
+<div class="m-panel">Store / Buildings panel<span class="note">↑ tap handle to expand</span></div>
+<div class="m-tabs"><span>🛒</span><span>🏭</span><span>📊</span><span>⚙️</span><span>ℹ️</span><span>👼</span></div>
+</div>
+<table>
+<tr><th>Tab</th><th>What it shows</th></tr>
+<tr><td>🛒 Store</td><td>Buy buildings and upgrades. A red dot means you can afford something.</td></tr>
+<tr><td>🏭 Buildings</td><td>One view per building, the minigames (Garden, Pantheon, Grimoire, Stock Market), and the news</td></tr>
+<tr><td>📊 Stats</td><td>Statistics, achievements and your upgrades</td></tr>
+<tr><td>⚙️ Options</td><td>Settings, save export / import, and language</td></tr>
+<tr><td>ℹ️ Info</td><td>Version notes</td></tr>
+<tr><td>👼 Legacy</td><td>Opens the ascend prompt</td></tr>
+</table>
+<p class="tip">Tap the active tab again to scroll back to the top. Turn the iPhone sideways for the original 3-column PC layout.</p>
+
+<h2 id="en-touch">Touch controls</h2>
+<table>
+<tr><th>Gesture</th><th>Result</th></tr>
+<tr><td>Tap</td><td>Press, buy or harvest. It reacts the moment you lift your finger.</td></tr>
+<tr><td>Long press (0.5 s)</td><td><b>Shows the tooltip only.</b> Nothing is bought or used.</td></tr>
+<tr><td>Press and slide away</td><td>Cancels the tap</td></tr>
+<tr><td>Swipe up / down</td><td>Scrolls the store or the buildings. Scrolling never buys anything.</td></tr>
+<tr><td>Touch somewhere else</td><td>Closes the open tooltip</td></tr>
+<tr><td>Pinch / double tap</td><td>Does nothing. Zoom is turned off so it can't happen by accident.</td></tr>
+</table>
+<h3>Clicking fast</h3>
+<ul><li>Each tap is one click, and the cookie shrinks while your finger is down.</li><li><b>Drum with two fingers</b> to click faster: every finger lift counts.</li><li>As with a mouse, the limit is about 50 clicks per second.</li></ul>
+<h3>Golden cookies</h3>
+<p>They pop the <b>moment your finger touches them</b>, so you can catch moving ones too.</p>
+
+<h2 id="en-store">Store</h2>
+<ul>
+<li>The top row is upgrades and the list below is buildings. Tap once to buy one.</li>
+<li>Use <kbd>Buy</kbd> / <kbd>Sell</kbd> and <kbd>1</kbd> <kbd>10</kbd> <kbd>100</kbd> to buy or sell in bulk.</li>
+<li><b>Long press</b> to see prices and effects without buying.</li>
+<li>Tap the <b>handle</b> on the panel's top edge to pull the panel up over the cookie and see more of the list. Tap it again to put it back.</li>
+</ul>
+
+<h2 id="en-mini">Buildings and minigames (🏭 tab)</h2>
+<ul><li><kbd>lvl</kbd> at the bottom right of a building row levels the building up with sugar lumps. Long press it to read what that costs.</li><li>Buildings at level 1 or higher get a "View …" button that opens their minigame.</li></ul>
+<h3>Garden (Farm)</h3><ul><li>Tap a seed to select it, then tap a plot to plant it. Tap a planted plot to harvest it.</li><li><b>Long press</b> a plot to check on the plant. A long press never harvests, so you can't uproot something by accident.</li></ul>
+<h3>Pantheon (Temple)</h3><ul><li>Tap a spirit, then tap a slot to place it. To swap, tap a slotted spirit and then another slot.</li></ul>
+<h3>Grimoire (Wizard tower)</h3><ul><li>Tap a spell to cast it. <b>Long press</b> it to read the effect and cost without casting.</li></ul>
+<h3>Stock Market (Bank)</h3><ul><li>Tap the buy / sell buttons on each stock.</li></ul>
+<h3>Sugar lumps</h3><ul><li>The lump is at the bottom left of the cookie view. <b>Long press</b> to see how ripe it is, then tap to harvest when it's ready. A long press never harvests.</li></ul>
+
+<h2 id="en-ascend">Ascending (👼 tab)</h2>
+<ul><li>Confirm "Ascend" in the prompt to open the heavenly upgrade screen.</li><li><b>Drag</b> to move around. <b>Tap</b> an upgrade to buy it, or <b>long press</b> it to read about it.</li><li>When you're done, use the "Reincarnate" button at the top.</li></ul>
+
+<h2 id="en-save">Saves</h2>
+<ul>
+<li>The game autosaves every 60 seconds. It also saves the moment you leave the app or lock the phone.</li>
+<li><b>Safari and the Home Screen app keep separate saves.</b> To move a save, open ⚙️ Options → Export save → <kbd>Copy to clipboard</kbd> where the save is. Then, in the other one, open ⚙️ Options → Import save → <kbd>Paste from clipboard</kbd> → Load.</li>
+<li>Saves from the PC or official browser versions import the same way.</li>
+</ul>
+<h3>Add to Home Screen</h3>
+<ol><li>Open the game in Safari.</li><li>Tap Share → "Add to Home Screen".</li><li>Leave "Open as Web App" on and tap Add.</li></ol>
+<p>Open it once while you're online; after that it also works in Airplane Mode.</p>
+
+<h2 id="en-trouble">If something is off</h2>
+<ul>
+<li><b>The layout looks wrong:</b> turn the phone sideways and back. If that doesn't fix it, close the app and open it again.</li>
+<li><b>No sound:</b> the silent switch mutes the game, because the game is set up not to stop music playing in other apps.</li>
+<li><b>Turn a fix off for testing:</b> open the game with <kbd>?iosoff=portraitUI</kbd>, <kbd>?iosoff=fastTap</kbd> or <kbd>?iosoff=audio</kbd> at the end of the URL.</li>
+</ul>
+</section>
+
+</main>
+</body>
+</html>

@@ -118,15 +118,21 @@ dispatched immediately, so we act on pointerup and cancel the compatibility mous
 events + click for that touch (touchend.preventDefault), with a click-capture
 safety net so a purchase can never happen twice.
 =======================================================================================*/
-var FAST_SELECTOR='#bigCookie,.shimmer,#products .product,#store .crate.upgrade';
+//Everything that spends something gets "tap = do it, long press = only show the tooltip, slide off =
+//cancel". With plain clicks, iOS still fires the action after a long press, so reading a tooltip
+//could harvest an unripe sugar lump, cast a spell, level a building or uproot a plant.
+var FAST_SELECTOR='#bigCookie,.shimmer,#products .product,#store .crate.upgrade,'+
+	'#lumps,.productLevel,.grimoireSpell,.gardenTile,.gardenSeed,.bankButton';
+var ASCEND_SELECTOR='#ascendUpgrades .crate';//heavenly upgrades, only while ascending
 var INNER_CLICKABLE='a,button,input,textarea,select,label,.productButton';
 var fastTargetOf=function(node){
 	if (!node || !node.closest) return null;
-	var el=node.closest(FAST_SELECTOR);
+	if (typeof Game!=='undefined' && Game.promptOn) return null;
+	var ascending=typeof Game!=='undefined' && Game.OnAscend;
+	var el=node.closest(ascending?ASCEND_SELECTOR:FAST_SELECTOR);
 	if (!el) return null;
 	var inner=node.closest(INNER_CLICKABLE);
 	if (inner && inner!==el && el.contains(inner)) return null;//let nested controls behave natively
-	if (typeof Game!=='undefined' && (Game.promptOn || Game.OnAscend)) return null;
 	return el;
 };
 IOSFixes.fastTargetOf=fastTargetOf;
@@ -247,7 +253,7 @@ if (CONFIG.fastTap && window.PointerEvent)
 	document.addEventListener('click',function(e){
 		if (!e.isTrusted || lastPointerType!=='touch') return;
 		if (now()-lastFastTapAt>GHOST_CLICK_MS) return;
-		if (!fastTargetOf(e.target) && !(e.target && e.target.closest && e.target.closest(FAST_SELECTOR))) return;
+		if (!fastTargetOf(e.target) && !(e.target && e.target.closest && e.target.closest(FAST_SELECTOR+','+ASCEND_SELECTOR))) return;
 		e.stopImmediatePropagation();
 		e.preventDefault();
 		IOSFixes.stats.ghostClicksBlocked++;
@@ -472,7 +478,10 @@ Portrait.setActive=function(on){
 	if (on)
 	{
 		Portrait.buildBar();
+		Portrait.buildHandle();
+		Portrait.buildHelpButton();
 		Portrait.show(Game.onMenu?Game.onMenu:Portrait.tab);
+		if (!uiState.helpSeen && !/[?&]nohelp=1\b/.test(window.location.search)) setTimeout(Portrait.openHelp,800);//first launch
 	}
 	//the top bar (DashNet links) is hidden in portrait; game code offsets the mouse by its height
 	if (typeof TopBarOffset!=='undefined') TopBarOffset=(on || App)?0:32;
@@ -497,6 +506,69 @@ Portrait.updateBadge=function(){
 	var tab=document.getElementById('iosTab-store');
 	if (tab) tab.classList.toggle('badge',any && Portrait.tab!=='store');
 };
+//per-viewer UI state (panel expanded, help already shown); never touches the save
+var uiState={};
+try {uiState=JSON.parse(window.localStorage.getItem('CookieClickerIOSUI')||'{}')||{};} catch(e){uiState={};}
+var saveUI=function(){try {window.localStorage.setItem('CookieClickerIOSUI',JSON.stringify(uiState));} catch(e){}};
+IOSFixes.uiState=uiState;
+
+//panel drawer: tap (or swipe) the handle to pull the store / buildings panel up over the cookie
+Portrait.setExpanded=function(on){
+	uiState.expanded=!!on;saveUI();
+	docEl.classList.toggle('ios-panel-expanded',!!on);
+	var h=document.getElementById('iosPanelHandle');
+	if (h) h.setAttribute('aria-expanded',on?'true':'false');
+};
+Portrait.buildHandle=function(){
+	if (document.getElementById('iosPanelHandle')) return;
+	var h=document.createElement('div');
+	h.id='iosPanelHandle';
+	h.setAttribute('role','button');
+	h.setAttribute('aria-label','Expand panel');
+	h.innerHTML='<span class="iosHandlePill"></span>';
+	var startY=null;
+	h.addEventListener('pointerdown',function(e){startY=e.clientY;});
+	h.addEventListener('pointerup',function(e){
+		if (startY===null) return;
+		var dy=e.clientY-startY;startY=null;
+		if (dy<-20) Portrait.setExpanded(true);
+		else if (dy>20) Portrait.setExpanded(false);
+		else Portrait.setExpanded(!uiState.expanded);
+		PlaySound('snd/tick.mp3');
+	});
+	h.addEventListener('pointercancel',function(){startY=null;});
+	Game.l.appendChild(h);
+	Portrait.setExpanded(!!uiState.expanded);
+};
+
+//help: help.html in an overlay, opened from the ? button; shown once on the first portrait launch
+Portrait.openHelp=function(){
+	var o=document.getElementById('iosHelp');
+	if (!o)
+	{
+		o=document.createElement('div');
+		o.id='iosHelp';
+		o.innerHTML='<div class="iosHelpBar"><span class="iosHelpTitle"></span><a class="iosHelpClose" role="button" aria-label="Close">✕</a></div><iframe src="help.html?embed=1" title="Help"></iframe>';
+		document.body.appendChild(o);
+		var ja=false;try {ja=window.localStorage.getItem('CookieClickerLang')==='JA';} catch(e){}
+		o.querySelector('.iosHelpTitle').textContent=ja?'遊び方':'How to play';
+		o.querySelector('.iosHelpClose').addEventListener('click',Portrait.closeHelp);
+	}
+	o.classList.add('on');
+	uiState.helpSeen=true;saveUI();
+};
+Portrait.closeHelp=function(){var o=document.getElementById('iosHelp');if (o) o.classList.remove('on');};
+Portrait.buildHelpButton=function(){
+	if (document.getElementById('iosHelpButton')) return;
+	var b=document.createElement('div');
+	b.id='iosHelpButton';
+	b.setAttribute('role','button');
+	b.setAttribute('aria-label','Help');
+	b.textContent='?';
+	b.addEventListener('click',function(e){e.preventDefault();PlaySound('snd/tick.mp3');Portrait.openHelp();});
+	l('sectionLeft').appendChild(b);
+};
+
 var installPortrait=function(){
 	setInterval(Portrait.updateBadge,1000);
 	//tab highlight follows menus opened by the game itself

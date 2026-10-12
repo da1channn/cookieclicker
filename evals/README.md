@@ -103,3 +103,8 @@ So the manual iPhone checklist in the main README is still required.
 | T44 | building tooltip fits on screen |
 | T45 | notifications never block the cookie or the store |
 | T46 | landscape returns to the 3-column layout, portrait restores the tab UI and tab |
+| T47 | ? help button ≥ 44pt opens the touch-controls guide, X closes it |
+| T48 | help shows itself on the first launch only |
+| T49 | panel drawer: more store rows when pulled up, state remembered across launches |
+| T50 | long press never harvests a sugar lump or plants a garden plot; tap still does |
+| T51 | ascension: long press on a heavenly upgrade = info only, tap buys |

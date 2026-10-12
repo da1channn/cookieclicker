@@ -50,7 +50,12 @@ body
 	-webkit-touch-callout: none;
 }
 .ios-fixes #products .product,
-.ios-fixes #store .crate
+.ios-fixes #store .crate,
+.ios-fixes .gardenTile,
+.ios-fixes .gardenSeed,
+.ios-fixes .grimoireSpell,
+.ios-fixes .bankButton,
+.ios-fixes .productLevel
 {
 	touch-action: pan-y;                 /* the store must still scroll when you drag over items */
 	-webkit-user-select: none;
@@ -201,8 +206,60 @@ Logical layout width is 375px. Cookie on top, one panel below, tab bar at the bo
    cookie (only their close buttons catch taps) so they never block the store or clicking */
 .ios-portrait #notes{top:58px;bottom:auto;transform:scale(0.78);transform-origin:50% 0;pointer-events:none;opacity:0.95;}
 .ios-portrait #notes .close{pointer-events:auto;}
+.ios-portrait #notes .note ~ .note ~ .note{display:none;}/* at most 2 at a time (newest first) */
 
 /* prompts wider than the screen */
 .ios-portrait #prompt.widePrompt{width:330px;left:-165px;}
 .ios-portrait #prompt.legacyPrompt{width:330px;left:-165px;}
 .ios-portrait #prompt{max-width:330px;}
+
+/* panel drawer handle (on the panel's top edge) */
+#iosPanelHandle{display:none;}
+.ios-portrait #iosPanelHandle
+{
+	display:block;position:absolute;left:50%;top:42%;
+	width:120px;height:40px;margin-left:-60px;margin-top:-20px;
+	z-index:3;cursor:pointer;touch-action:none;
+}
+.iosHandlePill
+{
+	position:absolute;left:50%;top:50%;width:56px;height:8px;margin:-4px 0 0 -28px;
+	border-radius:4px;background:rgba(255,215,160,0.75);box-shadow:0 1px 3px #000,0 0 0 1px rgba(0,0,0,0.6);
+}
+#iosPanelHandle:active .iosHandlePill{background:#ffd88a;}
+.ios-portrait.ios-panel-expanded #sectionMiddle,
+.ios-portrait.ios-panel-expanded #sectionRight{top:64px;}
+.ios-portrait.ios-panel-expanded #iosPanelHandle{top:64px;}
+#sectionMiddle,#sectionRight,#iosPanelHandle{transition:top 0.18s ease-out;}
+
+/* ? help button, top left of the cookie view */
+#iosHelpButton{display:none;}
+.ios-portrait #iosHelpButton
+{
+	display:flex;align-items:center;justify-content:center;
+	position:absolute;left:6px;top:6px;width:44px;height:44px;z-index:300;
+	border-radius:50%;background:rgba(0,0,0,0.55);border:2px solid rgba(255,215,160,0.6);
+	color:#ffe3b0;font:bold 22px/1 Georgia,serif;cursor:pointer;touch-action:manipulation;
+}
+#iosHelpButton:active{background:rgba(255,190,90,0.3);}
+
+/* help overlay (outside the scaled game, real device pixels) */
+#iosHelp{display:none;}
+#iosHelp.on
+{
+	display:flex;flex-direction:column;
+	position:fixed;inset:0;z-index:2147483000;background:#120b05;
+	padding-top:env(safe-area-inset-top);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);
+}
+#iosHelp .iosHelpBar
+{
+	flex:0 0 auto;height:48px;display:flex;align-items:center;justify-content:space-between;
+	padding:0 4px 0 16px;border-bottom:1px solid rgba(255,200,120,0.25);color:#ffbf4d;
+	font:600 17px/1 -apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif;
+}
+#iosHelp .iosHelpClose
+{
+	width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+	color:#f3e6d3;font-size:22px;cursor:pointer;text-decoration:none;
+}
+#iosHelp iframe{flex:1 1 auto;width:100%;border:0;background:#120b05;}

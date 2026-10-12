@@ -1,10 +1,10 @@
 {
  "label": "baseline-plasma4-mobile",
  "target": "mobile.html",
- "date": "2026-10-12T14:30:04.764Z",
- "passed": 12,
- "total": 28,
- "score": 0.429,
+ "date": "2026-10-12T15:04:56.591Z",
+ "passed": 18,
+ "total": 34,
+ "score": 0.529,
  "results": [
   {
    "pass": false,
@@ -12,7 +12,7 @@
    "id": "T01",
    "name": "viewport meta: device-width, non-scalable, viewport-fit=cover",
    "group": "P0 zoom",
-   "ms": 1408
+   "ms": 891
   },
   {
    "pass": false,
@@ -24,7 +24,7 @@
    "id": "T02",
    "name": "layout viewport == device width, page scale 1",
    "group": "P1 viewport",
-   "ms": 908
+   "ms": 849
   },
   {
    "pass": false,
@@ -45,7 +45,7 @@
    "id": "T03",
    "name": "whole game visible: no overflow, no horizontal scroll (portrait)",
    "group": "P1 viewport",
-   "ms": 894
+   "ms": 835
   },
   {
    "pass": false,
@@ -60,7 +60,7 @@
    "id": "T04",
    "name": "touch-action: html/body manipulation, cookie none, store pan-y",
    "group": "P0 zoom",
-   "ms": 896
+   "ms": 820
   },
   {
    "pass": true,
@@ -70,7 +70,7 @@
    "id": "T05",
    "name": "single tap on cookie = exactly 1 click (no ghost/double click)",
    "group": "P0 tap",
-   "ms": 1965
+   "ms": 1930
   },
   {
    "pass": true,
@@ -79,14 +79,14 @@
     "ups": 20
    },
    "metrics": {
-    "lat_p50_ms": 3.199999999953434,
-    "lat_p95_ms": 8,
-    "lat_max_ms": 16.699999999953434
+    "lat_p50_ms": 2.8000000002793968,
+    "lat_p95_ms": 3.3000000002793968,
+    "lat_max_ms": 3.3999999999068677
    },
    "id": "T06",
    "name": "20 rapid taps (22/s): all counted, none late",
    "group": "P0 tap",
-   "ms": 3553
+   "ms": 3339
   },
   {
    "pass": false,
@@ -97,7 +97,7 @@
    "id": "T07",
    "name": "two-finger drumming on cookie: every finger lift counts",
    "group": "P0 tap",
-   "ms": 3263
+   "ms": 3254
   },
   {
    "pass": false,
@@ -107,7 +107,7 @@
    "id": "T08",
    "name": "cookie touchstart is default-prevented (WebKit cannot start zoom/scroll on it)",
    "group": "P0 zoom",
-   "ms": 1140
+   "ms": 1160
   },
   {
    "pass": true,
@@ -123,7 +123,7 @@
    "id": "T09",
    "name": "double tap (cookie, store, middle) never zooms",
    "group": "P0 zoom",
-   "ms": 4511
+   "ms": 4316
   },
   {
    "pass": true,
@@ -134,7 +134,7 @@
    "id": "T10",
    "name": "pinch never zooms",
    "group": "P0 zoom",
-   "ms": 1804
+   "ms": 1764
   },
   {
    "pass": true,
@@ -145,7 +145,7 @@
    "id": "T11",
    "name": "store building: 1 tap = 1 building, 5 fast taps = 5",
    "group": "P0 tap",
-   "ms": 3713
+   "ms": 3752
   },
   {
    "pass": true,
@@ -158,18 +158,18 @@
    "id": "T12",
    "name": "store upgrade: 1 tap buys it exactly once",
    "group": "P0 tap",
-   "ms": 2782
+   "ms": 2733
   },
   {
    "pass": true,
    "detail": {
-    "scrollTop": 185,
+    "scrollTop": 229,
     "bought": false
    },
    "id": "T13",
    "name": "store scrolls by dragging; dragging never buys (landscape)",
    "group": "P0 tap",
-   "ms": 2641
+   "ms": 2750
   },
   {
    "pass": false,
@@ -180,7 +180,7 @@
    "id": "T14",
    "name": "long press on a building shows its tooltip and does not buy",
    "group": "P2 ux",
-   "ms": 2948
+   "ms": 2925
   },
   {
    "pass": false,
@@ -232,7 +232,7 @@
    "id": "T15",
    "name": "portrait -> landscape -> portrait keeps layout & scale",
    "group": "P1 rotation",
-   "ms": 3928
+   "ms": 3870
   },
   {
    "pass": true,
@@ -248,7 +248,7 @@
    "id": "T16",
    "name": "finger position maps to game coordinates (particles/drag at the finger)",
    "group": "P1 rotation",
-   "ms": 1144
+   "ms": 1156
   },
   {
    "pass": false,
@@ -271,7 +271,7 @@
    "id": "T17",
    "name": "safe area (Dynamic Island + home indicator): game stays inside, taps still map",
    "group": "P1 safe-area",
-   "ms": 2956
+   "ms": 2928
   },
   {
    "pass": false,
@@ -295,30 +295,26 @@
    "id": "T18",
    "name": "viewport self-repair after resume; no forced resizes while idle",
    "group": "P1 resume",
-   "ms": 5361
+   "ms": 5323
   },
   {
-   "pass": false,
+   "pass": true,
    "detail": {
     "key": {
      "key": "CookieClickerGame",
      "stored": true
     },
-    "mobile.html": {
-     "imported": true,
-     "reExportIdentical": false,
-     "backImported": true
-    },
-    "desktop.html": {
-     "imported": true,
-     "reExportIdentical": null,
-     "backImported": true
-    }
+    "importedHere": true,
+    "importedPlasmaMobile": true,
+    "importedDesktop": true,
+    "sameExportAsPlasma": true,
+    "fromPlasmaMobile": true,
+    "fromDesktop": true
    },
    "id": "T19",
-   "name": "save compatibility with plasma4 mobile.html and desktop.html (both directions)",
+   "name": "save compatibility with plasma4 mobile.html and desktop.html (both directions, identical format)",
    "group": "P0 save",
-   "ms": 2917
+   "ms": 5207
   },
   {
    "pass": false,
@@ -328,7 +324,7 @@
    "id": "T20",
    "name": "progress is saved when the app goes to background",
    "group": "P1 lifecycle",
-   "ms": 970
+   "ms": 956
   },
   {
    "pass": true,
@@ -339,7 +335,7 @@
    "id": "T21",
    "name": "GitHub Pages subpath: no 404s, no absolute paths",
    "group": "P1 pwa",
-   "ms": 2363
+   "ms": 2361
   },
   {
    "pass": false,
@@ -349,19 +345,19 @@
    "id": "T22",
    "name": "PWA: manifest, apple meta, icons, service worker",
    "group": "P1 pwa",
-   "ms": 891
+   "ms": 856
   },
   {
-   "pass": false,
+   "pass": true,
    "detail": {
     "popped": true,
-    "gc": 0,
+    "pops": 1,
     "cookieClicks": 0
    },
    "id": "T23",
    "name": "golden cookie over the big cookie: 1 tap = 1 pop, no ghost cookie click",
    "group": "P0 tap",
-   "ms": 2272
+   "ms": 2236
   },
   {
    "pass": true,
@@ -376,7 +372,7 @@
    "id": "T24",
    "name": "Garden: tapping a tile plants the selected seed",
    "group": "P1 minigame",
-   "ms": 3651
+   "ms": 3718
   },
   {
    "pass": true,
@@ -387,13 +383,13 @@
    "id": "T25",
    "name": "Pantheon: tap a spirit then a slot to place it",
    "group": "P1 minigame",
-   "ms": 3837
+   "ms": 3785
   },
   {
    "pass": false,
    "detail": {
     "dx": -12,
-    "dy": -74.7,
+    "dy": -80,
     "expected": [
      -120,
      -80
@@ -402,19 +398,90 @@
    "id": "T26",
    "name": "Ascension tree pans with a finger drag",
    "group": "P1 minigame",
-   "ms": 7590
+   "ms": 7710
   },
   {
-   "pass": false,
+   "pass": true,
    "detail": {
     "before": 1,
     "on": 1,
-    "display": "block"
+    "display": "block",
+    "from": "topbarDashnet"
    },
    "id": "T27",
    "name": "tooltip closes when touching elsewhere",
    "group": "P2 ux",
-   "ms": 3148
+   "ms": 3174
+  },
+  {
+   "pass": false,
+   "detail": {
+    "measured": 5,
+    "sounds": 24
+   },
+   "metrics": {
+    "sound_lat_p50_ms": 48.2,
+    "sound_lat_max_ms": 52.2
+   },
+   "id": "T29",
+   "name": "click sound starts quickly after the finger touches the cookie",
+   "group": "P0 tap",
+   "ms": 4536
+  },
+  {
+   "pass": true,
+   "detail": {
+    "clicks": 2,
+    "bought": 1
+   },
+   "id": "T30",
+   "name": "mouse / trackpad clicks still work exactly once (iPad, desktop)",
+   "group": "P0 tap",
+   "ms": 2773
+  },
+  {
+   "pass": true,
+   "detail": {
+    "bought": 0
+   },
+   "id": "T31",
+   "name": "sliding the finger off a building cancels the purchase",
+   "group": "P2 ux",
+   "ms": 2398
+  },
+  {
+   "pass": false,
+   "detail": {
+    "sel": "none",
+    "ta": "auto",
+    "focused": true,
+    "promptOn": 0,
+    "scrollY": 0,
+    "gameTop": 0
+   },
+   "id": "T32",
+   "name": "Import save prompt: text field editable/pasteable, buttons work, no leftover scroll",
+   "group": "P1 save",
+   "ms": 2337
+  },
+  {
+   "pass": false,
+   "detail": "EXCEPTION Error: eval timed out after 150000ms |     at /home/user/cookieclicker/evals/run.js:543:74 |     at async /home/user/cookieclicker/evals/run.js:543:10",
+   "id": "T33",
+   "name": "Home Screen app relaunch works offline (service worker cache)",
+   "group": "P1 pwa",
+   "ms": 150000
+  },
+  {
+   "pass": true,
+   "detail": {
+    "down": 1,
+    "up": 0
+   },
+   "id": "T34",
+   "name": "cookie press feedback: cookie shrinks while the finger is down, releases after",
+   "group": "P2 ux",
+   "ms": 1374
   },
   {
    "pass": true,
@@ -422,7 +489,7 @@
    "id": "T28",
    "name": "no JavaScript errors during the whole suite",
    "group": "P0 stability",
-   "ms": 2826
+   "ms": 2880
   }
  ]
 }

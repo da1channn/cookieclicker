@@ -10,7 +10,7 @@
 */
 (function(){
 'use strict';
-var HASH='6964c6496ee6881cdaa45d67c4c3f4b2b9d176b3e87e228434f0b90cb178d086';//sha256('cc-gate:'+password)
+var HASH='d4de2d53a987df9bd04d2c885851d8359aee951ea5bb9b6be215ee01d74efa65';//sha256('cc-gate:'+password)
 var KEY='CookieClickerGate';//localStorage: the hash that was unlocked on this device
 var unlocked=false;
 try {unlocked=window.localStorage.getItem(KEY)===HASH;} catch(e){}

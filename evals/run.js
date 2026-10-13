@@ -24,6 +24,7 @@ const LABEL=arg('label',TARGET.replace(/\W+/g,'_'));
 const ONLY=arg('only','')?arg('only').split(','):null;
 const QUIET=args.includes('--quiet');
 
+const GATE_HASH=(fs.readFileSync(path.join(__dirname,'..','gate.js'),'utf8').match(/var HASH='([0-9a-f]{64})'/)||[])[1]||'';//unlock like a device that already entered the password
 const PORTRAIT={width:393,height:852};//iPhone 15/16 Pro, standalone (full screen)
 const LANDSCAPE={width:852,height:393};
 const UA='Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
@@ -33,16 +34,17 @@ const EVAL_TIMEOUT_MS=150000;//a hung eval fails instead of stalling the suite
 let browser,srv;
 const pageErrors=[];
 
-async function openGame(file=TARGET,{viewport=PORTRAIT,insets=null,storage=null,init=null,query='',firstRun=false,screen=PORTRAIT}={}){
+async function openGame(file=TARGET,{viewport=PORTRAIT,insets=null,storage=null,init=null,query='',firstRun=false,screen=PORTRAIT,locked=false}={}){
 	const context=await browser.newContext({viewport,screen:{width:screen.width,height:screen.height},deviceScaleFactor:3,isMobile:true,hasTouch:true,userAgent:UA});
 	await context.route(url=>!url.href.startsWith(srv.base.replace(/cookieclicker\/$/,'')),r=>r.abort());
-	await context.addInitScript(([storage,firstRun])=>{
+	await context.addInitScript(([storage,firstRun,gate,locked])=>{
 		try {
+			if (!locked) localStorage.setItem('CookieClickerGate',gate);
 			localStorage.setItem('CookieClickerLang','EN');
 			if (!firstRun && !localStorage.getItem('CookieClickerIOSUI')) localStorage.setItem('CookieClickerIOSUI',JSON.stringify({helpSeen:true}));//first-run help has its own eval
 			if (storage) for (const k in storage) localStorage.setItem(k,storage[k]);
 		} catch(e){}
-	},[storage,firstRun]);
+	},[storage,firstRun,GATE_HASH,locked]);
 	if (init) await context.addInitScript(init);
 	const page=await context.newPage();
 	page.on('pageerror',e=>pageErrors.push(file+': '+e.message));
@@ -911,6 +913,31 @@ const EVALS=[
 	const r=await g.page.evaluate(()=>({off:document.getElementById('iosIdle-background').classList.contains('off'),stored:JSON.parse(localStorage.getItem('CookieClickerIOSUI')||'{}').idle}));
 	await g.context.close();
 	return {pass:r.off&&r.stored&&r.stored.background===false,detail:r};
+}],
+['T62','private: without the password the game does not start; wrong password rejected; right one unlocks and is remembered','P1 private',async()=>{
+	const context=await browser.newContext({viewport:PORTRAIT,deviceScaleFactor:3,isMobile:true,hasTouch:true,userAgent:UA});
+	await context.route(url=>!url.href.startsWith(srv.base.replace(/cookieclicker\/$/,'')),r=>r.abort());
+	const page=await context.newPage();
+	const out={};
+	for (const file of ['index.html','mobile.html','desktop.html']){
+		await page.goto(srv.base+file);await sleep(4000);
+		out[file]=await page.evaluate(()=>({gate:!!document.getElementById('ccGate'),gameRunning:!!(window.Game&&Game.ready),noindex:!!document.querySelector('meta[name=robots][content*=noindex]')}));
+	}
+	await page.goto(srv.base+'index.html');await sleep(1000);
+	await page.fill('#ccGate input','not-the-password');await page.click('#ccGate button');await sleep(800);
+	out.wrong=await page.evaluate(()=>({gate:!!document.getElementById('ccGate'),err:document.querySelector('#ccGate .err').textContent.length>0}));
+	const pw=process.env.CC_GATE_PASSWORD||'';
+	if (pw){
+		await page.fill('#ccGate input',pw);await page.click('#ccGate button');
+		await page.waitForFunction(()=>window.Game&&Game.ready&&Game.T>10,null,{timeout:60000}).catch(()=>{});
+		out.unlocked=await page.evaluate(()=>!document.getElementById('ccGate')&&!!(window.Game&&Game.ready));
+		await page.reload();await page.waitForFunction(()=>window.Game&&Game.ready&&Game.T>10,null,{timeout:60000}).catch(()=>{});
+		out.remembered=await page.evaluate(()=>!document.getElementById('ccGate')&&!!(window.Game&&Game.ready));
+	}
+	await context.close();
+	const lockedOk=['index.html','mobile.html','desktop.html'].every(f=>out[f].gate&&!out[f].gameRunning&&out[f].noindex);
+	const ok=lockedOk&&out.wrong.gate&&out.wrong.err&&(pw?out.unlocked&&out.remembered:true);
+	return {pass:ok,detail:{...out,passwordChecked:!!pw}};
 }],
 ['T28','no JavaScript errors during the whole suite','P0 stability',async()=>{
 	const g=await openGame();await sleep(2000);await g.context.close();

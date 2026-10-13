@@ -131,3 +131,4 @@ this way so far and fixed:
 | T59 | idle: time frozen in the background (debugger-paused page, like iOS) is baked at 100% CpS on return; no double count when the page kept running |
 | T60 | idle: reopening after 2h closed pays the mobile-app offline rate (5% for 1h, 0.5% after) |
 | T61 | idle settings appear in Options and switch off (remembered) |
+| T62 | private: every game page shows the password screen and does not start the game; noindex; wrong password rejected; right password unlocks and is remembered (password from CC_GATE_PASSWORD, never stored) |

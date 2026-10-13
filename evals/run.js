@@ -836,6 +836,24 @@ const EVALS=[
 	await g.context.close();
 	return {pass:r.statusBarArea==='cookiePanel'&&r.homeIndicatorArea==='tabBar'&&r.cookies>=58,detail:r};
 }],
+['T58','long-press tooltip sits next to the pressed button and does not move while shown','P2 ux',async()=>{
+	const g=await openGame();await richGame(g);
+	const sel='#product2';
+	const p=await center(g,sel);
+	const rect=()=>g.page.evaluate(()=>{const r=l('tooltip').getBoundingClientRect();return [Math.round(r.top),Math.round(r.left),Math.round(r.bottom)];});
+	await touch(g,'touchStart',[{x:p.x,y:p.y,id:1}]);await sleep(600);
+	const r1=await rect();
+	await touch(g,'touchMove',[{x:p.x+3,y:p.y+4,id:1}]);await sleep(300);//a slight wobble of the finger
+	const r2=await rect();await sleep(400);
+	const r3=await rect();
+	const el=await g.page.evaluate(s=>{const r=document.querySelector(s).getBoundingClientRect();return [Math.round(r.top),Math.round(r.bottom)];},sel);
+	await touch(g,'touchEnd',[]);await sleep(300);
+	const after=await g.page.evaluate(()=>Game.tooltip.tta.style.display);
+	await g.context.close();
+	const still=JSON.stringify(r1)===JSON.stringify(r2)&&JSON.stringify(r2)===JSON.stringify(r3);
+	const beside=r1[2]<=el[0]+1||r1[0]>=el[1]-1;//entirely above or below the button
+	return {pass:still&&beside&&after==='none',detail:{tooltip:[r1,r2,r3],button:el,afterRelease:after}};
+}],
 ['T28','no JavaScript errors during the whole suite','P0 stability',async()=>{
 	const g=await openGame();await sleep(2000);await g.context.close();
 	const mine=pageErrors.filter(e=>e.startsWith(TARGET));

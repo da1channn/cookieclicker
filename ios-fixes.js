@@ -640,9 +640,22 @@ var installPortrait=function(){
 			tta.style.transform=fit<1?'scale('+fit+')':'';
 			var width=tt.offsetWidth*fit,height=tt.offsetHeight*fit;
 			var X=Math.max(4,Math.floor((W-width)/2));
-			var fingerY=Game.mouseY;
-			var Y=(fingerY>H/2)?fingerY-height-40:fingerY+40;
-			Y=Math.max(safe.t+4,Math.min(H-height-4,Y));
+			//anchor to the pressed element, not the finger, so it never moves while shown:
+			//above the element (the finger covers it and what is below), else below it
+			var Y,from=this.from;
+			if (from && from.getBoundingClientRect && from.isConnected)
+			{
+				var b=boundsFrom(from);
+				if (b.top-height-8>=safe.t+4) Y=b.top-height-8;
+				else if (b.bottom+8+height<=H) Y=b.bottom+8;
+				else Y=safe.t+4;
+			}
+			else
+			{
+				var fingerY=Game.mouseY;
+				Y=(fingerY>H/2)?fingerY-height-40:fingerY+40;
+			}
+			Y=Math.max(safe.t+4,Math.min(H-height-4,Math.round(Y)));
 			tta.style.left=X+'px';tta.style.right='auto';
 			tta.style.top=Y+'px';tta.style.bottom='auto';
 			tt.style.left='0px';tt.style.top='0px';tt.style.right='auto';tt.style.bottom='auto';

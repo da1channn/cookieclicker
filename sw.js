@@ -5,7 +5,7 @@
 	- other origins: untouched
 	Saves live in localStorage and are never touched by this worker.
 */
-var VERSION='cc-ios-v5';
+var VERSION='cc-ios-v6';
 var CORE=[
 	'./',
 	'index.html',

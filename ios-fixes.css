@@ -125,18 +125,27 @@ Logical layout width is 375px. Cookie on top, one panel below, tab bar at the bo
 
 /* cookie panel: the canvas is 80px taller than what is visible so the cookie (drawn at 40% of
    the canvas height) sits in the middle of the visible part; the extra strip hides under the panel */
+/* Full-bleed: #wrapper covers the whole screen; --iosT / --iosB (set by ios-fixes.js, logical px)
+   are the status bar / home indicator heights. The cookie art runs behind the status bar, the tab
+   bar runs down to the bottom edge, and every control stays inside the safe area.
+   --iosPanelTop = where the store/buildings panel starts (42% of the safe height). */
+.ios-portrait #wrapper{--iosPanelTop:calc(var(--iosT,0px) + (100% - var(--iosT,0px) - var(--iosB,0px)) * 0.42);}
+.ios-portrait #game{--iosPanelTop:calc(var(--iosT,0px) + (100% - var(--iosT,0px) - var(--iosB,0px)) * 0.42);}
 .ios-portrait #sectionLeft
 {
 	left:0;right:0;top:0;bottom:auto;
 	width:auto;min-width:0;
-	height:calc(42% + 80px);
+	/* the game draws the cookie at 40% of this canvas: the extra 80px + 1.5*iosT hidden under the
+	   panel keep it centred in the visible part */
+	height:calc(var(--iosPanelTop) + 80px + var(--iosT,0px) * 1.5);
 	z-index:1;
 }
-.ios-portrait #cookies{top:0;font-size:22px !important;padding:4px 0;}
-.ios-portrait #bakeryNameAnchor{top:auto;bottom:calc(80px + 4px);}
+.ios-portrait #cookies{top:var(--iosT,0px);font-size:22px !important;padding:4px 0;}
+.ios-portrait #bakeryNameAnchor{top:auto;bottom:calc(80px + var(--iosT,0px) * 1.5 + 4px);}
 .ios-portrait #bakeryName{font-size:14px !important;}
-.ios-portrait #lumps{left:10px;top:auto;bottom:calc(80px + 28px);transform:scale(1.25);transform-origin:0 100%;}
-.ios-portrait #buffs{top:44px;}
+.ios-portrait #lumps{left:10px;top:auto;bottom:calc(80px + var(--iosT,0px) * 1.5 + 28px);transform:scale(1.25);transform-origin:0 100%;}
+.ios-portrait #buffs{top:calc(var(--iosT,0px) + 44px);}
+.ios-portrait #ascend{top:var(--iosT,0px);bottom:var(--iosB,0px);}
 
 /* lower panel: store or buildings/menus, one at a time */
 .ios-portrait #sectionMiddle,
@@ -144,7 +153,7 @@ Logical layout width is 375px. Cookie on top, one panel below, tab bar at the bo
 {
 	position:absolute;
 	left:0 !important;right:0 !important;
-	top:42%;bottom:60px;
+	top:var(--iosPanelTop);bottom:calc(60px + var(--iosB,0px));
 	width:auto;height:auto;
 	min-width:0;margin:0;padding:0;
 	z-index:2;
@@ -178,7 +187,8 @@ Logical layout width is 375px. Cookie on top, one panel below, tab bar at the bo
 .ios-portrait #iosTabBar
 {
 	display:flex;
-	position:absolute;left:0;right:0;bottom:0;height:60px;
+	position:absolute;left:0;right:0;bottom:0;
+	box-sizing:border-box;height:calc(60px + var(--iosB,0px));padding-bottom:var(--iosB,0px);/* background down to the edge, buttons above the home indicator */
 	z-index:50000;
 	background:linear-gradient(#2a1d12,#120b05);
 	border-top:1px solid rgba(255,200,120,0.35);
@@ -209,7 +219,7 @@ Logical layout width is 375px. Cookie on top, one panel below, tab bar at the bo
 
 /* notifications: small, over the top of the cookie panel, and taps go through them to the
    cookie (only their close buttons catch taps) so they never block the store or clicking */
-.ios-portrait #notes{top:58px;bottom:auto;transform:scale(0.78);transform-origin:50% 0;pointer-events:none;opacity:0.95;}
+.ios-portrait #notes{top:calc(var(--iosT,0px) + 58px);bottom:auto;transform:scale(0.78);transform-origin:50% 0;pointer-events:none;opacity:0.95;}
 .ios-portrait #notes .close{pointer-events:auto;}
 .ios-portrait #notes .note ~ .note ~ .note{display:none;}/* at most 2 at a time (newest first) */
 
@@ -222,7 +232,7 @@ Logical layout width is 375px. Cookie on top, one panel below, tab bar at the bo
 #iosPanelHandle{display:none;}
 .ios-portrait #iosPanelHandle
 {
-	display:block;position:absolute;left:50%;top:42%;
+	display:block;position:absolute;left:50%;top:var(--iosPanelTop);
 	width:120px;height:40px;margin-left:-60px;margin-top:-20px;
 	z-index:3;cursor:pointer;touch-action:none;
 }
@@ -233,8 +243,8 @@ Logical layout width is 375px. Cookie on top, one panel below, tab bar at the bo
 }
 #iosPanelHandle:active .iosHandlePill{background:#ffd88a;}
 .ios-portrait.ios-panel-expanded #sectionMiddle,
-.ios-portrait.ios-panel-expanded #sectionRight{top:64px;}
-.ios-portrait.ios-panel-expanded #iosPanelHandle{top:64px;}
+.ios-portrait.ios-panel-expanded #sectionRight{top:calc(var(--iosT,0px) + 64px);}
+.ios-portrait.ios-panel-expanded #iosPanelHandle{top:calc(var(--iosT,0px) + 64px);}
 #sectionMiddle,#sectionRight,#iosPanelHandle{transition:top 0.18s ease-out;}
 
 /* help button, top left of the cookie view: a labelled pill (a lone "?" read as a broken image) */
@@ -242,7 +252,7 @@ Logical layout width is 375px. Cookie on top, one panel below, tab bar at the bo
 .ios-portrait #iosHelpButton
 {
 	display:flex;align-items:center;gap:4px;
-	position:absolute;left:6px;top:6px;height:42px;padding:0 12px 0 9px;z-index:300;
+	position:absolute;left:6px;top:calc(var(--iosT,0px) + 6px);height:42px;padding:0 12px 0 9px;z-index:300;
 	border-radius:21px;background:linear-gradient(#4a3420,#2a1b0e);
 	border:1px solid rgba(255,210,140,0.75);box-shadow:0 2px 4px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,230,180,0.25);
 	color:#ffe3b0;font:600 14px/1 -apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif;

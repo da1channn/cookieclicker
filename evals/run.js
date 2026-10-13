@@ -33,8 +33,8 @@ const EVAL_TIMEOUT_MS=150000;//a hung eval fails instead of stalling the suite
 let browser,srv;
 const pageErrors=[];
 
-async function openGame(file=TARGET,{viewport=PORTRAIT,insets=null,storage=null,init=null,query='',firstRun=false}={}){
-	const context=await browser.newContext({viewport,screen:{width:PORTRAIT.width,height:PORTRAIT.height},deviceScaleFactor:3,isMobile:true,hasTouch:true,userAgent:UA});
+async function openGame(file=TARGET,{viewport=PORTRAIT,insets=null,storage=null,init=null,query='',firstRun=false,screen=PORTRAIT}={}){
+	const context=await browser.newContext({viewport,screen:{width:screen.width,height:screen.height},deviceScaleFactor:3,isMobile:true,hasTouch:true,userAgent:UA});
 	await context.route(url=>!url.href.startsWith(srv.base.replace(/cookieclicker\/$/,'')),r=>r.abort());
 	await context.addInitScript(([storage,firstRun])=>{
 		try {
@@ -238,14 +238,16 @@ const EVALS=[
 	await g.context.close();
 	return {pass:st>20&&a0===a1,detail:{scrollTop:st,bought:a0!==a1}};
 }],
-['T14','long press on a building shows its tooltip and does not buy','P2 ux',async()=>{
+['T14','long press on a building: tooltip while the finger is down, gone on release, nothing bought','P2 ux',async()=>{
 	const g=await openGame();await richGame(g);
 	const p=await center(g,'#product0');
 	const a0=await g.page.evaluate(()=>Game.ObjectsById[0].amount);
-	await tap(g,p,{hold:800});await sleep(600);
-	const r=await g.page.evaluate(()=>({amount:Game.ObjectsById[0].amount,tooltip:Game.tooltip.on}));
+	await touch(g,'touchStart',[{x:p.x,y:p.y,id:1}]);await sleep(800);
+	const during=await g.page.evaluate(()=>Game.tooltip.on);
+	await touch(g,'touchEnd',[]);await sleep(500);
+	const r=await g.page.evaluate(()=>({amount:Game.ObjectsById[0].amount,after:Game.tooltip.tta.style.display}));
 	await g.context.close();
-	return {pass:r.amount===a0&&r.tooltip===1,detail:r};
+	return {pass:r.amount===a0&&during===1&&r.after==='none',detail:{tooltipWhileHeld:during,tooltipAfterRelease:r.after,bought:r.amount-a0}};
 }],
 ['T15','portrait -> landscape -> portrait keeps layout & scale','P1 rotation',async()=>{
 	const g=await openGame();
@@ -273,7 +275,9 @@ const EVALS=[
 	const insets={top:59,bottom:34,left:0,right:0};
 	const g=await openGame(TARGET,{insets});
 	if (g.unsupported) return {pass:null,detail:g.unsupported};
-	const r=await g.page.evaluate(()=>{const b=Game.wrapper.getBoundingClientRect();return {top:b.top,bottom:b.bottom,h:innerHeight};});
+	//portrait is full-bleed: the art fills the screen, every control sits inside the safe area
+	const r=await g.page.evaluate(()=>{const b=Game.wrapper.getBoundingClientRect(),c=l('cookies').getBoundingClientRect(),hb=document.getElementById('iosHelpButton'),tabs=[...document.querySelectorAll('.iosTab')];
+		return {wrapTop:b.top,wrapBottom:b.bottom,top:Math.min(c.top,hb?hb.getBoundingClientRect().top:1e9),bottom:tabs.length?Math.max(...tabs.map(t=>t.getBoundingClientRect().bottom)):b.bottom,h:innerHeight};});
 	await recorder(g);
 	const p=await center(g,'#bigCookie');await tap(g,p);await sleep(500);
 	const m=await g.page.evaluate(()=>({n:__rec.clicks.length,mx:Game.mouseX,my:Game.mouseY,cx:Game.cookieOriginX,cy:Game.cookieOriginY}));
@@ -283,7 +287,7 @@ const EVALS=[
 	const l=await g.page.evaluate(()=>{const b=Game.wrapper.getBoundingClientRect();return {left:b.left,right:b.right,bottom:b.bottom,w:innerWidth,h:innerHeight};});
 	await g.context.close();
 	const err=Math.hypot(m.mx-m.cx,m.my-m.cy);
-	const ok=r.top>=insets.top-1&&r.bottom<=r.h-insets.bottom+1&&m.n===1&&err<6&&l.left>=58&&l.right<=l.w-58&&l.bottom<=l.h-20;
+	const ok=r.top>=insets.top-1&&r.bottom<=r.h-insets.bottom+1&&r.wrapTop<=1&&r.wrapBottom>=r.h-1&&m.n===1&&err<6&&l.left>=58&&l.right<=l.w-58&&l.bottom<=l.h-20;
 	return {pass:ok,detail:{portrait:r,landscape:l,clicks:m.n,mouseErr:+err.toFixed(1)}};
 }],
 ['T18','viewport self-repair after resume; no forced resizes while idle','P1 resume',async()=>{
@@ -436,22 +440,16 @@ const EVALS=[
 	const ok=Math.abs(dx-ex)<Math.abs(ex)*0.25&&Math.abs(dy-ey)<Math.abs(ey)*0.25;
 	return {pass:ok,detail:{dx:+dx.toFixed(1),dy:+dy.toFixed(1),expected:[+ex.toFixed(1),+ey.toFixed(1)]}};
 }],
-['T27','tooltip closes when touching elsewhere','P2 ux',async()=>{
+['T27','quick tap on a building buys it without flashing a tooltip over the store','P2 ux',async()=>{
 	const g=await openGame();await richGame(g);
+	await g.page.evaluate(()=>{window.__draws=0;const d=Game.tooltip.draw;Game.tooltip.draw=function(){__draws++;return d.apply(this,arguments);};});
 	const p=await center(g,'#product0');
-	await tap(g,p,{hold:800});await sleep(300);
-	const on=await g.page.evaluate(()=>Game.tooltip.on);
-	//a spot on the left panel that has no tooltip of its own
-	const left=await g.page.evaluate(()=>{const r=l('sectionLeft').getBoundingClientRect(),vv=visualViewport;
-		for (let f=0.6;f<0.98;f+=0.02){const x=r.left+r.width*0.15,y=r.top+r.height*f;const e=document.elementFromPoint(x,y);
-			if (e && !e.closest('[onmouseover],#bigCookie,.shimmer')) return {x:(x-vv.offsetLeft)*vv.scale,y:(y-vv.offsetTop)*vv.scale,el:e.id};}
-		return null;});
-	await tap(g,left);await sleep(500);
-	//Chromium's touch emulation sends a stray mouseover to (0,0) after a tap, which can open the
-	//top bar's own tooltip; what matters is that the building tooltip is gone
-	const r=await g.page.evaluate(()=>({on:Game.tooltip.on,display:Game.tooltip.tta.style.display,from:Game.tooltip.from&&Game.tooltip.from.id}));
+	const a0=await g.page.evaluate(()=>Game.ObjectsById[0].amount);
+	for (let i=0;i<3;i++){await tap(g,p,{hold:60});await sleep(250);}
+	await sleep(400);
+	const r=await g.page.evaluate(a0=>({draws:__draws,bought:Game.ObjectsById[0].amount-a0,display:Game.tooltip.tta.style.display}),a0);
 	await g.context.close();
-	return {pass:on===1&&(r.display==='none'||r.from!=='product0'),detail:{before:on,...r}};
+	return {pass:r.draws===0&&r.bought===3&&r.display!=='block',detail:r};
 }],
 ['T29','click sound starts quickly after the finger touches the cookie','P0 tap',async()=>{
 	const g=await openGame();
@@ -818,6 +816,43 @@ const EVALS=[
 	await g.context.close();
 	const ok=auto&&restored.cookies>=111111&&restored.cursors===3&&afterHide.cookies>=222222&&afterHide.grandmas===4&&respected;
 	return {pass:ok,detail:{autosaveWrote:auto,restoredAfterRelaunch:restored,restoredAfterLeavingApp:afterHide,autosaveOffRespected:respected}};
+}],
+['T56','iPhone Air Home Screen app: iOS reports the height short by the status bar -> still no empty band at the bottom','P1 viewport',async()=>{
+	//iPhone Air is 420x912pt; iOS 26 standalone can report innerHeight=844 (912 minus the 68pt status bar)
+	const g=await openGame(TARGET,{viewport:{width:420,height:844},screen:{width:420,height:912},insets:{top:68,bottom:34,left:0,right:0},query:'?iosstandalone=1'});
+	if (g.unsupported) return {pass:null,detail:g.unsupported};
+	const r=await g.page.evaluate(()=>{const w=Game.wrapper.getBoundingClientRect(),tabs=[...document.querySelectorAll('.iosTab')],tb=document.getElementById('iosTabBar').getBoundingClientRect();
+		return {inner:innerHeight,wrapperBottom:Math.round(w.bottom),tabBarBottom:Math.round(tb.bottom),tabsBottom:Math.round(Math.max(...tabs.map(t=>t.getBoundingClientRect().bottom))),bodyH:document.body.getBoundingClientRect().height};});
+	await g.context.close();
+	const ok=r.wrapperBottom>=911&&r.tabBarBottom>=911&&r.tabsBottom<=912-34+1&&r.tabsBottom>=912-34-8;
+	return {pass:ok,detail:r};
+}],
+['T57','portrait is full screen: game art behind the status bar, tab bar down to the bottom edge, no black bands','P1 viewport',async()=>{
+	const g=await openGame(TARGET,{insets:{top:59,bottom:34,left:0,right:0}});
+	if (g.unsupported) return {pass:null,detail:g.unsupported};
+	await sleep(400);
+	const r=await g.page.evaluate(()=>{const at=(x,y)=>{const e=document.elementFromPoint(x,y);return e?(e.closest('#iosTabBar')?'tabBar':e.closest('#sectionLeft')?'cookiePanel':(e.id||e.tagName)):null;};
+		const W=innerWidth,H=innerHeight;return {statusBarArea:at(W/2,20),homeIndicatorArea:at(W/2,H-10),cookies:l('cookies').getBoundingClientRect().top};});
+	await g.context.close();
+	return {pass:r.statusBarArea==='cookiePanel'&&r.homeIndicatorArea==='tabBar'&&r.cookies>=58,detail:r};
+}],
+['T58','long-press tooltip sits next to the pressed button and does not move while shown','P2 ux',async()=>{
+	const g=await openGame();await richGame(g);
+	const sel='#product2';
+	const p=await center(g,sel);
+	const rect=()=>g.page.evaluate(()=>{const r=l('tooltip').getBoundingClientRect();return [Math.round(r.top),Math.round(r.left),Math.round(r.bottom)];});
+	await touch(g,'touchStart',[{x:p.x,y:p.y,id:1}]);await sleep(600);
+	const r1=await rect();
+	await touch(g,'touchMove',[{x:p.x+3,y:p.y+4,id:1}]);await sleep(300);//a slight wobble of the finger
+	const r2=await rect();await sleep(400);
+	const r3=await rect();
+	const el=await g.page.evaluate(s=>{const r=document.querySelector(s).getBoundingClientRect();return [Math.round(r.top),Math.round(r.bottom)];},sel);
+	await touch(g,'touchEnd',[]);await sleep(300);
+	const after=await g.page.evaluate(()=>Game.tooltip.tta.style.display);
+	await g.context.close();
+	const still=JSON.stringify(r1)===JSON.stringify(r2)&&JSON.stringify(r2)===JSON.stringify(r3);
+	const beside=r1[2]<=el[0]+1||r1[0]>=el[1]-1;//entirely above or below the button
+	return {pass:still&&beside&&after==='none',detail:{tooltip:[r1,r2,r3],button:el,afterRelease:after}};
 }],
 ['T28','no JavaScript errors during the whole suite','P0 stability',async()=>{
 	const g=await openGame();await sleep(2000);await g.context.close();

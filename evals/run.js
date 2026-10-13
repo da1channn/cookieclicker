@@ -854,6 +854,64 @@ const EVALS=[
 	const beside=r1[2]<=el[0]+1||r1[0]>=el[1]-1;//entirely above or below the button
 	return {pass:still&&beside&&after==='none',detail:{tooltip:[r1,r2,r3],button:el,afterRelease:after}};
 }],
+['T59','idle: time the app spent frozen in the background is baked at full CpS on return (no double count when it kept running)','P1 idle',async()=>{
+	const g=await openGame();
+	await g.page.evaluate(()=>{Game.ObjectsById[1].getFree(60);Game.ObjectsById[2].getFree(20);Game.CalculateGains();});
+	await sleep(2500);
+	const cps=await g.page.evaluate(()=>{Game.CalculateGains();return Game.cookiesPs;});
+	const hide=()=>g.page.evaluate(()=>{Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>'hidden'});document.dispatchEvent(new Event('visibilitychange'));});
+	const show=()=>g.page.evaluate(()=>{delete document.visibilityState;document.dispatchEvent(new Event('visibilitychange'));});
+	//1) iOS-style suspension: the page is frozen for 20s
+	let c0=await g.page.evaluate(()=>Game.cookies);
+	await hide();
+	//pause all JavaScript like iOS does to a background Home Screen app (Chromium's lifecycle freeze
+	//only applies to genuinely hidden tabs, so the debugger is used to stop the page instead)
+	await g.cdp.send('Debugger.enable');await g.cdp.send('Debugger.pause');await sleep(20000);
+	await g.cdp.send('Debugger.resume');await g.cdp.send('Debugger.disable');
+	await show();await sleep(1500);
+	const frozenGain=(await g.page.evaluate(()=>Game.cookies))-c0;
+	//2) hidden but still running (desktop-like): nothing extra may be added
+	c0=await g.page.evaluate(()=>Game.cookies);
+	await hide();await sleep(10000);await show();await sleep(1500);
+	const runningGain=(await g.page.evaluate(()=>Game.cookies))-c0;
+	await g.context.close();
+	const fr=frozenGain/(cps*21.5),rr=runningGain/(cps*11.5);
+	return {pass:fr>0.85&&fr<1.2&&rr>0.8&&rr<1.2,detail:{cps:+cps.toFixed(1),frozenGain:Math.round(frozenGain),expectedFrozen:Math.round(cps*21.5),runningGain:Math.round(runningGain),expectedRunning:Math.round(cps*11.5)},metrics:{frozen_ratio:+fr.toFixed(2),running_ratio:+rr.toFixed(2)}};
+}],
+['T60','idle: reopening after 2 hours closed pays the mobile-app offline rate (5% for 1h, 0.5% after)','P1 idle',async()=>{
+	const g=await openGame();
+	await g.page.evaluate(()=>{Game.ObjectsById[1].getFree(60);Game.ObjectsById[2].getFree(20);Game.CalculateGains();});
+	await sleep(1500);
+	const before=await g.page.evaluate(()=>{
+		Game.CalculateGains();
+		Game.prefs.autosave=0;//so leaving the page does not overwrite the doctored save below
+		Game.WriteSave();
+		const raw=unescape(localStorage.getItem(Game.SaveTo)).split('!END!')[0];
+		const parts=b64_to_utf8(raw).split('|');const run=parts[2].split(';');run[2]=String(Date.now()-2*3600*1000);parts[2]=run.join(';');
+		localStorage.setItem(Game.SaveTo,escape(utf8_to_b64(parts.join('|'))+'!END!'));
+		return {cookies:Game.cookies,cps:Game.cookiesPs};
+	});
+	await g.page.reload();
+	await g.page.waitForFunction(()=>window.Game&&Game.ready&&Game.T>10,null,{timeout:60000});await sleep(800);
+	const after=await g.page.evaluate(()=>Game.cookies);
+	await g.context.close();
+	const expected=(3600+3600*0.1)*before.cps*0.05;
+	const gained=after-before.cookies;
+	const ratio=gained/expected;
+	return {pass:ratio>0.9&&ratio<1.25,detail:{gained:Math.round(gained),expected:Math.round(expected)},metrics:{offline_ratio:+ratio.toFixed(2)}};
+}],
+['T61','idle settings appear in Options and can be switched off (remembered)','P2 idle',async()=>{
+	const g=await openGame();
+	await g.page.evaluate(()=>Game.ShowMenu('prefs'));await sleep(500);
+	const has=await g.page.evaluate(()=>!!document.getElementById('iosIdle-background')&&!!document.getElementById('iosIdle-offline'));
+	if (!has) {await g.context.close();return {pass:false,detail:'no idle settings in Options'};}
+	await g.page.evaluate(()=>document.getElementById('iosIdle-background').scrollIntoView({block:'center'}));
+	const p=await center(g,'#iosIdle-background');
+	await tap(g,p);await sleep(500);
+	const r=await g.page.evaluate(()=>({off:document.getElementById('iosIdle-background').classList.contains('off'),stored:JSON.parse(localStorage.getItem('CookieClickerIOSUI')||'{}').idle}));
+	await g.context.close();
+	return {pass:r.off&&r.stored&&r.stored.background===false,detail:r};
+}],
 ['T28','no JavaScript errors during the whole suite','P0 stability',async()=>{
 	const g=await openGame();await sleep(2000);await g.context.close();
 	const mine=pageErrors.filter(e=>e.startsWith(TARGET));

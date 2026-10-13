@@ -898,6 +898,93 @@ var installSaveTransfer=function(){
 };
 
 /*=====================================================================================
+IDLE PROGRESS
+On a computer an open tab keeps baking in the background. iOS freezes a Home Screen app as soon
+as it leaves the screen, and on return the game only catches up 5 seconds of frames, so locking
+the phone for an hour produced nothing. Two settings (Options menu, both on by default):
+  background - when the app comes back, credit the frames iOS skipped at the un-buffed CpS
+               (what an open tab on a computer would have made; frames that did run are not counted)
+  offline    - after the app was closed, the official mobile app's offline rule: 5% CpS for up
+               to an hour, 0.5% after that, even without Twin Gates of Transcendence
+               (with Twin Gates / Perfect idling the game's own, better rule applies as before)
+=======================================================================================*/
+var Idle=IOSFixes.idle={hiddenAt:0,hiddenT:0};
+var idleOn=function(k){return !(uiState.idle && uiState.idle[k]===false);};
+var unbuffedCps=function(){
+	var m=1;
+	for (var i in Game.buffs){var b=Game.buffs[i];if (b && typeof b.multCpS!=='undefined' && b.multCpS>0) m*=b.multCpS;}
+	return Math.max(0,Game.cookiesPs/m);
+};
+Idle.unbuffedCps=unbuffedCps;
+var welcomeBack=function(amount,seconds,percent){
+	if (!(amount>0)) return;
+	Game.Earn(amount);
+	var ja=false;try {ja=window.localStorage.getItem('CookieClickerLang')==='JA';} catch(e){}
+	var detail='('+Game.sayTime(seconds*Game.fps,-1)+(percent<100?(', '+percent+'% CpS'):'')+')';
+	Game.Notify(loc("Welcome back!"),loc("You earned <b>%1</b> while you were away.",loc("%1 cookie",LBeautify(amount)))+'<br>'+detail,[Math.floor(Math.random()*16),11]);
+	log('idle credit',amount,'for',seconds,'s at',percent+'%');
+};
+Idle.markHidden=function(){
+	if (!gameReady()) return;
+	Idle.hiddenAt=Date.now();Idle.hiddenT=Game.T;
+};
+Idle.creditBackground=function(){
+	if (!Idle.hiddenAt || !gameReady()) return;
+	var elapsed=(Date.now()-Idle.hiddenAt)/1000;
+	var ran=(Game.T-Idle.hiddenT)/Game.fps;//logic the game did run (including its own 5s catch-up)
+	Idle.hiddenAt=0;
+	if (!idleOn('background') || Game.OnAscend || Game.AscendTimer>0 || Game.timedout) return;
+	var missing=elapsed-ran;
+	if (!(missing>=2) || missing>60*60*24*365) return;
+	welcomeBack(unbuffedCps()*missing,missing,100);
+};
+Idle.creditOffline=function(lastDate){
+	//the game itself already paid out if you own these (or on the official mobile app)
+	if (!idleOn('offline') || Game.mobile || Game.Has('Perfect idling') || Game.Has('Twin Gates of Transcendence')) return;
+	var timeOffline=(Date.now()-lastDate)/1000;
+	if (!(timeOffline>=60) || timeOffline>60*60*24*365) return;
+	var maxTime=60*60,percent=5;//same formula as the game (and the official mobile app) without upgrades
+	var optimal=Math.min(timeOffline,maxTime),reduced=Math.max(0,timeOffline-optimal);
+	welcomeBack((optimal+reduced*0.1)*unbuffedCps()*(percent/100),timeOffline,percent);
+};
+var installIdle=function(){
+	//relaunch: Game.lastDate still holds the time of the last save (nothing has saved since the load)
+	if (Game.lastDate && localStorage.getItem(Game.SaveTo)) {try {Idle.creditOffline(Game.lastDate);} catch(e){log('offline credit failed',e);}}
+	document.addEventListener('visibilitychange',function(){
+		if (document.visibilityState==='hidden') Idle.markHidden();
+		else setTimeout(Idle.creditBackground,50);//after the game's own 5s catch-up frame
+	});
+	window.addEventListener('pagehide',Idle.markHidden);
+	window.addEventListener('pageshow',function(e){if (e.persisted) setTimeout(Idle.creditBackground,50);});
+	//settings in the Options menu
+	var origUpdateMenu=Game.UpdateMenu;
+	Game.UpdateMenu=function(){
+		var r=origUpdateMenu.apply(this,arguments);
+		if (Game.onMenu==='prefs') Idle.renderOptions();
+		return r;
+	};
+};
+Idle.toggle=function(k){
+	uiState.idle=uiState.idle||{};
+	uiState.idle[k]=!idleOn(k);
+	saveUI();
+	PlaySound('snd/tick.mp3');
+	Game.UpdateMenu();
+};
+Idle.renderOptions=function(){
+	var menu=document.getElementById('menu');
+	if (!menu || document.getElementById('iosIdleOptions')) return;
+	var ja=false;try {ja=window.localStorage.getItem('CookieClickerLang')==='JA';} catch(e){}
+	var t=ja?{title:'iPhone版の放置設定',bg:'バックグラウンド中も生産',bgD:'ホームに戻ったり画面をロックしている間も、PCでタブを開いたままと同じように焼き続けます',off:'閉じている間も生産',offD:'アプリを閉じていた間、公式モバイル版と同じく 5%（1時間まで、それ以降0.5%）で生産します。天国のアップグレード「超越の双門」があればゲーム本来の計算が優先されます',on:'オン',no:'オフ'}
+		:{title:'iPhone idle settings',bg:'Bake in the background',bgD:'While the app is in the background or the phone is locked, keep baking like an open tab on a computer',off:'Bake while closed',offD:'While the app was closed, earn 5% CpS for up to an hour (0.5% after), like the official mobile app. Twin Gates of Transcendence uses the game\'s own rule instead',on:'ON',no:'OFF'};
+	var btn=function(k,label,desc){var on=idleOn(k);return '<div class="listing"><a class="smallFancyButton prefButton option'+(on?'':' off')+'" id="iosIdle-'+k+'" onclick="IOSFixes.idle.toggle(\''+k+'\');">'+label+' '+(on?t.on:t.no)+'</a><label>('+desc+')</label></div>';};
+	var html='<div class="block" id="iosIdleOptions" style="padding:0px;margin:8px 4px;"><div class="subsection" style="padding:0px;"><div class="title">'+t.title+'</div>'+btn('background',t.bg,t.bgD)+btn('offline',t.off,t.offD)+'</div></div>';
+	var target=menu.querySelector('.subsection');
+	if (target && target.parentNode) target.insertAdjacentHTML('afterend',html);
+	else menu.insertAdjacentHTML('beforeend',html);
+};
+
+/*=====================================================================================
 BOOT: wait for Game.Init (runs after window.onload + asset loading)
 =======================================================================================*/
 var installed=false;
@@ -907,6 +994,7 @@ var install=function(){
 	if (CONFIG.layout) {installPortrait();installLayout();}
 	if (CONFIG.audio) {try {installAudio();} catch(e){log('audio install failed',e);}}
 	installSaveTransfer();
+	try {installIdle();} catch(e){log('idle install failed',e);}
 	if ('serviceWorker' in navigator && /^https?:$/.test(window.location.protocol) && !/[?&]nosw=1\b/.test(window.location.search))
 	{
 		navigator.serviceWorker.register('sw.js').then(function(){return navigator.serviceWorker.ready;}).then(function(reg){

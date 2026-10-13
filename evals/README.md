@@ -128,3 +128,6 @@ this way so far and fixed:
 | T56 | iPhone Air Home Screen app with innerHeight reported short by the status bar (iOS 26): game still fills to the bottom, tabs above the home indicator |
 | T57 | portrait is full screen: game art behind the status bar, tab bar down to the bottom edge |
 | T58 | long-press tooltip sits next to the pressed button and does not move while shown |
+| T59 | idle: time frozen in the background (debugger-paused page, like iOS) is baked at 100% CpS on return; no double count when the page kept running |
+| T60 | idle: reopening after 2h closed pays the mobile-app offline rate (5% for 1h, 0.5% after) |
+| T61 | idle settings appear in Options and switch off (remembered) |

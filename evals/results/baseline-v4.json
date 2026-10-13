@@ -1,0 +1,804 @@
+{
+ "label": "baseline-v4",
+ "target": "mobile.html",
+ "date": "2026-10-13T00:25:33.742Z",
+ "passed": 22,
+ "total": 58,
+ "score": 0.379,
+ "results": [
+  {
+   "pass": false,
+   "detail": "width=900, initial-scale=1",
+   "id": "T01",
+   "name": "viewport meta: device-width, non-scalable, viewport-fit=cover",
+   "group": "P0 zoom",
+   "ms": 943
+  },
+  {
+   "pass": false,
+   "detail": {
+    "iw": 908,
+    "cw": 900,
+    "s": 1
+   },
+   "id": "T02",
+   "name": "layout viewport == device width, page scale 1",
+   "group": "P1 viewport",
+   "ms": 865
+  },
+  {
+   "pass": false,
+   "detail": {
+    "ok": false,
+    "rect": [
+     0,
+     0,
+     900,
+     1951
+    ],
+    "screen": [
+     393,
+     852
+    ],
+    "scale": 1
+   },
+   "id": "T03",
+   "name": "whole game visible: no overflow, no horizontal scroll (portrait)",
+   "group": "P1 viewport",
+   "ms": 899
+  },
+  {
+   "pass": false,
+   "detail": {
+    "html": "manipulation",
+    "body": "manipulation",
+    "cookie": "auto",
+    "store": "auto",
+    "product": "auto",
+    "deep": "auto"
+   },
+   "id": "T04",
+   "name": "touch-action: html/body manipulation, cookie none, store pan-y",
+   "group": "P0 zoom",
+   "ms": 851
+  },
+  {
+   "pass": true,
+   "detail": {
+    "clicks": 1
+   },
+   "id": "T05",
+   "name": "single tap on cookie = exactly 1 click (no ghost/double click)",
+   "group": "P0 tap",
+   "ms": 2004
+  },
+  {
+   "pass": true,
+   "detail": {
+    "clicks": 20,
+    "ups": 20
+   },
+   "metrics": {
+    "lat_p50_ms": 3.199999999953434,
+    "lat_p95_ms": 3.7000000001862645,
+    "lat_max_ms": 4.099999999860302
+   },
+   "id": "T06",
+   "name": "20 rapid taps (22/s): all counted, none late",
+   "group": "P0 tap",
+   "ms": 3399
+  },
+  {
+   "pass": false,
+   "detail": {
+    "clicks": 0,
+    "expected": 20
+   },
+   "id": "T07",
+   "name": "two-finger drumming on cookie: every finger lift counts",
+   "group": "P0 tap",
+   "ms": 3384
+  },
+  {
+   "pass": false,
+   "detail": [
+    false
+   ],
+   "id": "T08",
+   "name": "cookie touchstart is default-prevented (WebKit cannot start zoom/scroll on it)",
+   "group": "P0 zoom",
+   "ms": 1164
+  },
+  {
+   "pass": true,
+   "detail": {
+    "scales": {
+     "#bigCookie": 1,
+     "#product0": 1,
+     "#sectionMiddle": 1,
+     "#centerArea": 1
+    },
+    "cookieClicks": 2
+   },
+   "id": "T09",
+   "name": "double tap (cookie, store, middle) never zooms",
+   "group": "P0 zoom",
+   "ms": 4413
+  },
+  {
+   "pass": true,
+   "detail": {
+    "before": 1,
+    "after": 1
+   },
+   "id": "T10",
+   "name": "pinch never zooms",
+   "group": "P0 zoom",
+   "ms": 1821
+  },
+  {
+   "pass": true,
+   "detail": {
+    "single": 1,
+    "rapid": 5
+   },
+   "id": "T11",
+   "name": "store building: 1 tap = 1 building, 5 fast taps = 5",
+   "group": "P0 tap",
+   "ms": 3720
+  },
+  {
+   "pass": true,
+   "detail": {
+    "id": 0,
+    "owned": 1,
+    "bought": 1,
+    "before": 0
+   },
+   "id": "T12",
+   "name": "store upgrade: 1 tap buys it exactly once",
+   "group": "P0 tap",
+   "ms": 2808
+  },
+  {
+   "pass": true,
+   "detail": {
+    "scrollTop": 232,
+    "bought": false
+   },
+   "id": "T13",
+   "name": "store scrolls by dragging; dragging never buys (landscape)",
+   "group": "P0 tap",
+   "ms": 2704
+  },
+  {
+   "pass": false,
+   "detail": {
+    "tooltipWhileHeld": 1,
+    "tooltipAfterRelease": "block",
+    "bought": 1
+   },
+   "id": "T14",
+   "name": "long press on a building: tooltip while the finger is down, gone on release, nothing bought",
+   "group": "P2 ux",
+   "ms": 2833
+  },
+  {
+   "pass": false,
+   "detail": {
+    "portrait": {
+     "ok": false,
+     "rect": [
+      0,
+      0,
+      900,
+      1951
+     ],
+     "screen": [
+      393,
+      852
+     ],
+     "scale": 1
+    },
+    "landscape": {
+     "ok": false,
+     "rect": [
+      0,
+      0,
+      1951,
+      900
+     ],
+     "screen": [
+      852,
+      393
+     ],
+     "scale": 1
+    },
+    "back": {
+     "ok": false,
+     "rect": [
+      0,
+      0,
+      900,
+      1951
+     ],
+     "screen": [
+      393,
+      852
+     ],
+     "scale": 1
+    },
+    "vvScale": 0.9999998807907104
+   },
+   "id": "T15",
+   "name": "portrait -> landscape -> portrait keeps layout & scale",
+   "group": "P1 rotation",
+   "ms": 3896
+  },
+  {
+   "pass": true,
+   "detail": {
+    "mx": 135,
+    "my": 768,
+    "cx": 135,
+    "cy": 767
+   },
+   "metrics": {
+    "mouse_error_px": 1
+   },
+   "id": "T16",
+   "name": "finger position maps to game coordinates (particles/drag at the finger)",
+   "group": "P1 rotation",
+   "ms": 1170
+  },
+  {
+   "pass": false,
+   "detail": {
+    "portrait": {
+     "wrapTop": 0,
+     "wrapBottom": 1951,
+     "top": 223.890625,
+     "bottom": 1951,
+     "h": 1969
+    },
+    "landscape": {
+     "left": 0,
+     "right": 900,
+     "bottom": 415,
+     "w": 908,
+     "h": 419
+    },
+    "clicks": 1,
+    "mouseErr": 1
+   },
+   "id": "T17",
+   "name": "safe area (Dynamic Island + home indicator): game stays inside, taps still map",
+   "group": "P1 safe-area",
+   "ms": 2983
+  },
+  {
+   "pass": false,
+   "detail": {
+    "idleResizes": 0,
+    "scale0": 1,
+    "after": {
+     "ok": false,
+     "rect": [
+      0,
+      0,
+      800,
+      1951
+     ],
+     "screen": [
+      393,
+      852
+     ],
+     "scale": 1
+    }
+   },
+   "id": "T18",
+   "name": "viewport self-repair after resume; no forced resizes while idle",
+   "group": "P1 resume",
+   "ms": 5387
+  },
+  {
+   "pass": true,
+   "detail": {
+    "key": {
+     "key": "CookieClickerGame",
+     "stored": true
+    },
+    "importedHere": true,
+    "importedPlasmaMobile": true,
+    "importedDesktop": true,
+    "sameExportAsPlasma": true,
+    "fromPlasmaMobile": true,
+    "fromDesktop": true
+   },
+   "id": "T19",
+   "name": "save compatibility with plasma4 mobile.html and desktop.html (both directions, identical format)",
+   "group": "P0 save",
+   "ms": 5410
+  },
+  {
+   "pass": false,
+   "detail": {
+    "saved": false
+   },
+   "id": "T20",
+   "name": "progress is saved when the app goes to background",
+   "group": "P1 lifecycle",
+   "ms": 968
+  },
+  {
+   "pass": true,
+   "detail": {
+    "notFound": [],
+    "outside": []
+   },
+   "id": "T21",
+   "name": "GitHub Pages subpath: no 404s, no absolute paths",
+   "group": "P1 pwa",
+   "ms": 2374
+  },
+  {
+   "pass": false,
+   "detail": {
+    "manifest": false
+   },
+   "id": "T22",
+   "name": "PWA: manifest, apple meta, icons, service worker",
+   "group": "P1 pwa",
+   "ms": 874
+  },
+  {
+   "pass": true,
+   "detail": {
+    "popped": true,
+    "pops": 1,
+    "cookieClicks": 0
+   },
+   "id": "T23",
+   "name": "golden cookie over the big cookie: 1 tap = 1 pop, no ghost cookie click",
+   "group": "P0 tap",
+   "ms": 2256
+  },
+  {
+   "pass": true,
+   "detail": {
+    "tile": {
+     "x": 2,
+     "y": 2,
+     "id": "#gardenTile-2-2"
+    },
+    "plot": 1
+   },
+   "id": "T24",
+   "name": "Garden: tapping a tile plants the selected seed",
+   "group": "P1 minigame",
+   "ms": 3651
+  },
+  {
+   "pass": true,
+   "detail": {
+    "slot0": 0,
+    "god0": 0
+   },
+   "id": "T25",
+   "name": "Pantheon: tap a spirit then a slot to place it",
+   "group": "P1 minigame",
+   "ms": 3800
+  },
+  {
+   "pass": false,
+   "detail": {
+    "dx": -20,
+    "dy": -74.7,
+    "expected": [
+     -120,
+     -80
+    ]
+   },
+   "id": "T26",
+   "name": "Ascension tree pans with a finger drag",
+   "group": "P1 minigame",
+   "ms": 7726
+  },
+  {
+   "pass": false,
+   "detail": {
+    "draws": 9,
+    "bought": 3,
+    "display": "block"
+   },
+   "id": "T27",
+   "name": "quick tap on a building buys it without flashing a tooltip over the store",
+   "group": "P2 ux",
+   "ms": 2905
+  },
+  {
+   "pass": false,
+   "detail": {
+    "measured": 5,
+    "sounds": 24
+   },
+   "metrics": {
+    "sound_lat_p50_ms": 45.3,
+    "sound_lat_max_ms": 69.5
+   },
+   "id": "T29",
+   "name": "click sound starts quickly after the finger touches the cookie",
+   "group": "P0 tap",
+   "ms": 4535
+  },
+  {
+   "pass": true,
+   "detail": {
+    "clicks": 2,
+    "bought": 1
+   },
+   "id": "T30",
+   "name": "mouse / trackpad clicks still work exactly once (iPad, desktop)",
+   "group": "P0 tap",
+   "ms": 2830
+  },
+  {
+   "pass": true,
+   "detail": {
+    "bought": 0
+   },
+   "id": "T31",
+   "name": "sliding the finger off a building cancels the purchase",
+   "group": "P2 ux",
+   "ms": 2346
+  },
+  {
+   "pass": false,
+   "detail": {
+    "sel": "none",
+    "ta": "auto",
+    "focused": true,
+    "promptOn": 0,
+    "scrollY": 0,
+    "gameTop": 0
+   },
+   "id": "T32",
+   "name": "Import save prompt: text field editable/pasteable, buttons work, no leftover scroll",
+   "group": "P1 save",
+   "ms": 2374
+  },
+  {
+   "pass": false,
+   "detail": "EXCEPTION Error: eval timed out after 150000ms |     at /home/user/cookieclicker/evals/run.js:872:74 |     at async /home/user/cookieclicker/evals/run.js:872:10",
+   "id": "T33",
+   "name": "Home Screen app relaunch works offline (service worker cache)",
+   "group": "P1 pwa",
+   "ms": 150000
+  },
+  {
+   "pass": true,
+   "detail": {
+    "down": 1,
+    "up": 0
+   },
+   "id": "T34",
+   "name": "cookie press feedback: cookie shrinks while the finger is down, releases after",
+   "group": "P2 ux",
+   "ms": 1377
+  },
+  {
+   "pass": false,
+   "detail": "no copy button",
+   "id": "T35",
+   "name": "Export prompt: one tap copies the save code to the clipboard",
+   "group": "P1 save",
+   "ms": 1294
+  },
+  {
+   "pass": false,
+   "detail": "no paste button",
+   "id": "T36",
+   "name": "Import prompt: one tap pastes the save code from the clipboard",
+   "group": "P1 save",
+   "ms": 1272
+  },
+  {
+   "pass": false,
+   "detail": {
+    "control": 1618,
+    "stuck": {
+     "h": 1294,
+     "body": "",
+     "inner": 1294
+    }
+   },
+   "id": "T37",
+   "name": "standalone: viewport stuck small after the keyboard (iOS 26 bug) -> game still uses the full screen",
+   "group": "P1 resume",
+   "ms": 5116
+  },
+  {
+   "pass": true,
+   "detail": {
+    "scale": 1,
+    "vv": 1,
+    "font": 28
+   },
+   "metrics": {
+    "ui_scale": 1,
+    "building_name_pt": 28
+   },
+   "id": "T38",
+   "name": "portrait: readable size (text scale >= 0.95, not the 0.44 desktop shrink)",
+   "group": "P2 portrait UI",
+   "ms": 849
+  },
+  {
+   "pass": false,
+   "detail": {
+    "tabs": 0
+   },
+   "id": "T39",
+   "name": "portrait: tab bar at the bottom (thumb zone), above the home indicator, every tab >= 44pt",
+   "group": "P2 portrait UI",
+   "ms": 903
+  },
+  {
+   "pass": false,
+   "detail": "no tab bar",
+   "id": "T40",
+   "name": "portrait: every tab opens its screen (store, buildings, stats, options, info, legacy prompt)",
+   "group": "P2 portrait UI",
+   "ms": 898
+  },
+  {
+   "pass": false,
+   "detail": {
+    "w": 300,
+    "h": 64,
+    "W": 908,
+    "crate": null
+   },
+   "id": "T41",
+   "name": "portrait: store rows are full width and >= 44pt tall",
+   "group": "P2 portrait UI",
+   "ms": 1475
+  },
+  {
+   "pass": true,
+   "detail": {
+    "hits": [
+     true,
+     true,
+     true,
+     true,
+     true
+    ],
+    "size": 256
+   },
+   "id": "T42",
+   "name": "portrait: whole big cookie is visible and tappable (not under a panel)",
+   "group": "P2 portrait UI",
+   "ms": 926
+  },
+  {
+   "pass": true,
+   "detail": {
+    "store": 0,
+    "buildings": 0,
+    "stats": 0,
+    "prefs": 0,
+    "log": 0
+   },
+   "id": "T43",
+   "name": "portrait: no content cut off sideways in any panel",
+   "group": "P2 portrait UI",
+   "ms": 1516
+  },
+  {
+   "pass": true,
+   "detail": {
+    "l": 192,
+    "r": 580,
+    "t": 220,
+    "b": 318.203125,
+    "W": 908,
+    "H": 1969,
+    "on": 1
+   },
+   "id": "T44",
+   "name": "portrait: building tooltip fits on screen",
+   "group": "P2 portrait UI",
+   "ms": 2220
+  },
+  {
+   "pass": false,
+   "detail": {
+    "clicks": 1,
+    "overStore": true,
+    "tab": null
+   },
+   "id": "T45",
+   "name": "notifications never block the cookie, the store or the tab bar",
+   "group": "P2 portrait UI",
+   "ms": 2001
+  },
+  {
+   "pass": false,
+   "detail": {
+    "land": {
+     "tabBar": "none",
+     "topBar": "block",
+     "store": 300,
+     "scale": 1
+    },
+    "port": {
+     "tabBar": "none",
+     "topBar": "block"
+    }
+   },
+   "id": "T46",
+   "name": "rotate: landscape gets the original 3-column layout, portrait gets the tab UI back (link bar hidden on iOS)",
+   "group": "P2 portrait UI",
+   "ms": 4340
+  },
+  {
+   "pass": false,
+   "detail": "no help button",
+   "id": "T47",
+   "name": "help: ? button (>=44pt) opens the touch-controls guide, X closes it",
+   "group": "P2 help",
+   "ms": 853
+  },
+  {
+   "pass": false,
+   "detail": {
+    "first": false,
+    "second": false
+   },
+   "id": "T48",
+   "name": "help opens by itself on the very first launch only",
+   "group": "P2 help",
+   "ms": 4408
+  },
+  {
+   "pass": false,
+   "detail": "no handle",
+   "id": "T49",
+   "name": "panel drawer: handle pulls the store up (more rows), again puts it back, state remembered",
+   "group": "P2 portrait UI",
+   "ms": 1461
+  },
+  {
+   "pass": false,
+   "detail": {
+    "lumpAfterHold": 1,
+    "lumpAfterTap": 2,
+    "gardenPlantedByHold": 1
+   },
+   "id": "T50",
+   "name": "long press never spends: sugar lump not harvested, garden plot not planted; tap still works",
+   "group": "P1 minigame",
+   "ms": 6291
+  },
+  {
+   "pass": false,
+   "detail": {
+    "upgrade": 363,
+    "boughtByHold": 1,
+    "boughtByTap": 1
+   },
+   "id": "T51",
+   "name": "ascension: long press a heavenly upgrade = info only, tap buys it",
+   "group": "P1 minigame",
+   "ms": 8797
+  },
+  {
+   "pass": false,
+   "detail": "EXCEPTION page.evaluate: ReferenceError: IOSFixes is not defined |     at eval (eval at evaluate (:290:30), <anonymous>:1:6) |     at UtilityScript.evaluate (<anonymous>:292:16)",
+   "id": "T52",
+   "name": "no broken images or assets on any screen (tabs, 4 minigames, ascension, help, landscape)",
+   "group": "P2 visual",
+   "ms": 1673
+  },
+  {
+   "pass": true,
+   "detail": {
+    "tabBar": false,
+    "handle": false,
+    "help": false,
+    "notesOverTopButton": false
+   },
+   "id": "T53",
+   "name": "ascension screen is clean: no tab bar / drawer handle / help button, notifications clear of the top buttons",
+   "group": "P2 visual",
+   "ms": 6956
+  },
+  {
+   "pass": false,
+   "detail": "EXCEPTION TypeError: Cannot read properties of null (reading 'x') |     at tap (/home/user/cookieclicker/evals/run.js:73:35) |     at /home/user/cookieclicker/evals/run.js:784:8",
+   "id": "T54",
+   "name": "each tab keeps its own scroll position; a menu never opens half-scrolled from another tab",
+   "group": "P2 portrait UI",
+   "ms": 1494
+  },
+  {
+   "pass": false,
+   "detail": {
+    "autosaveWrote": true,
+    "restoredAfterRelaunch": {
+     "cookies": 111111,
+     "cursors": 3
+    },
+    "restoredAfterLeavingApp": {
+     "cookies": 111111,
+     "grandmas": 0
+    },
+    "autosaveOffRespected": true
+   },
+   "id": "T55",
+   "name": "progress survives a relaunch: 60s autosave, save on leaving the app, and nothing saved if autosave is off",
+   "group": "P0 save",
+   "ms": 3024
+  },
+  {
+   "pass": false,
+   "detail": "EXCEPTION page.evaluate: TypeError: Cannot read properties of null (reading 'getBoundingClientRect') |     at eval (eval at evaluate (:290:30), <anonymous>:1:137) |     at UtilityScript.evaluate (<anonymous>:292:16)",
+   "id": "T56",
+   "name": "iPhone Air Home Screen app: iOS reports the height short by the status bar -> still no empty band at the bottom",
+   "group": "P1 viewport",
+   "ms": 977
+  },
+  {
+   "pass": false,
+   "detail": {
+    "statusBarArea": "topbarDiscord",
+    "homeIndicatorArea": "HTML",
+    "cookies": 223.890625
+   },
+   "id": "T57",
+   "name": "portrait is full screen: game art behind the status bar, tab bar down to the bottom edge, no black bands",
+   "group": "P1 viewport",
+   "ms": 1487
+  },
+  {
+   "pass": false,
+   "detail": {
+    "tooltip": [
+     [
+      348,
+      192,
+      446
+     ],
+     [
+      348,
+      192,
+      446
+     ],
+     [
+      348,
+      192,
+      446
+     ]
+    ],
+    "button": [
+     344,
+     408
+    ],
+    "afterRelease": "block"
+   },
+   "id": "T58",
+   "name": "long-press tooltip sits next to the pressed button and does not move while shown",
+   "group": "P2 ux",
+   "ms": 3303
+  },
+  {
+   "pass": true,
+   "detail": [],
+   "id": "T28",
+   "name": "no JavaScript errors during the whole suite",
+   "group": "P0 stability",
+   "ms": 2963
+  }
+ ]
+}

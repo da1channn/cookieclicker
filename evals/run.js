@@ -33,8 +33,8 @@ const EVAL_TIMEOUT_MS=150000;//a hung eval fails instead of stalling the suite
 let browser,srv;
 const pageErrors=[];
 
-async function openGame(file=TARGET,{viewport=PORTRAIT,insets=null,storage=null,init=null,query='',firstRun=false}={}){
-	const context=await browser.newContext({viewport,screen:{width:PORTRAIT.width,height:PORTRAIT.height},deviceScaleFactor:3,isMobile:true,hasTouch:true,userAgent:UA});
+async function openGame(file=TARGET,{viewport=PORTRAIT,insets=null,storage=null,init=null,query='',firstRun=false,screen=PORTRAIT}={}){
+	const context=await browser.newContext({viewport,screen:{width:screen.width,height:screen.height},deviceScaleFactor:3,isMobile:true,hasTouch:true,userAgent:UA});
 	await context.route(url=>!url.href.startsWith(srv.base.replace(/cookieclicker\/$/,'')),r=>r.abort());
 	await context.addInitScript(([storage,firstRun])=>{
 		try {
@@ -273,7 +273,9 @@ const EVALS=[
 	const insets={top:59,bottom:34,left:0,right:0};
 	const g=await openGame(TARGET,{insets});
 	if (g.unsupported) return {pass:null,detail:g.unsupported};
-	const r=await g.page.evaluate(()=>{const b=Game.wrapper.getBoundingClientRect();return {top:b.top,bottom:b.bottom,h:innerHeight};});
+	//portrait is full-bleed: the art fills the screen, every control sits inside the safe area
+	const r=await g.page.evaluate(()=>{const b=Game.wrapper.getBoundingClientRect(),c=l('cookies').getBoundingClientRect(),hb=document.getElementById('iosHelpButton'),tabs=[...document.querySelectorAll('.iosTab')];
+		return {wrapTop:b.top,wrapBottom:b.bottom,top:Math.min(c.top,hb?hb.getBoundingClientRect().top:1e9),bottom:tabs.length?Math.max(...tabs.map(t=>t.getBoundingClientRect().bottom)):b.bottom,h:innerHeight};});
 	await recorder(g);
 	const p=await center(g,'#bigCookie');await tap(g,p);await sleep(500);
 	const m=await g.page.evaluate(()=>({n:__rec.clicks.length,mx:Game.mouseX,my:Game.mouseY,cx:Game.cookieOriginX,cy:Game.cookieOriginY}));
@@ -283,7 +285,7 @@ const EVALS=[
 	const l=await g.page.evaluate(()=>{const b=Game.wrapper.getBoundingClientRect();return {left:b.left,right:b.right,bottom:b.bottom,w:innerWidth,h:innerHeight};});
 	await g.context.close();
 	const err=Math.hypot(m.mx-m.cx,m.my-m.cy);
-	const ok=r.top>=insets.top-1&&r.bottom<=r.h-insets.bottom+1&&m.n===1&&err<6&&l.left>=58&&l.right<=l.w-58&&l.bottom<=l.h-20;
+	const ok=r.top>=insets.top-1&&r.bottom<=r.h-insets.bottom+1&&r.wrapTop<=1&&r.wrapBottom>=r.h-1&&m.n===1&&err<6&&l.left>=58&&l.right<=l.w-58&&l.bottom<=l.h-20;
 	return {pass:ok,detail:{portrait:r,landscape:l,clicks:m.n,mouseErr:+err.toFixed(1)}};
 }],
 ['T18','viewport self-repair after resume; no forced resizes while idle','P1 resume',async()=>{
@@ -818,6 +820,25 @@ const EVALS=[
 	await g.context.close();
 	const ok=auto&&restored.cookies>=111111&&restored.cursors===3&&afterHide.cookies>=222222&&afterHide.grandmas===4&&respected;
 	return {pass:ok,detail:{autosaveWrote:auto,restoredAfterRelaunch:restored,restoredAfterLeavingApp:afterHide,autosaveOffRespected:respected}};
+}],
+['T56','iPhone Air Home Screen app: iOS reports the height short by the status bar -> still no empty band at the bottom','P1 viewport',async()=>{
+	//iPhone Air is 420x912pt; iOS 26 standalone can report innerHeight=844 (912 minus the 68pt status bar)
+	const g=await openGame(TARGET,{viewport:{width:420,height:844},screen:{width:420,height:912},insets:{top:68,bottom:34,left:0,right:0},query:'?iosstandalone=1'});
+	if (g.unsupported) return {pass:null,detail:g.unsupported};
+	const r=await g.page.evaluate(()=>{const w=Game.wrapper.getBoundingClientRect(),tabs=[...document.querySelectorAll('.iosTab')],tb=document.getElementById('iosTabBar').getBoundingClientRect();
+		return {inner:innerHeight,wrapperBottom:Math.round(w.bottom),tabBarBottom:Math.round(tb.bottom),tabsBottom:Math.round(Math.max(...tabs.map(t=>t.getBoundingClientRect().bottom))),bodyH:document.body.getBoundingClientRect().height};});
+	await g.context.close();
+	const ok=r.wrapperBottom>=911&&r.tabBarBottom>=911&&r.tabsBottom<=912-34+1&&r.tabsBottom>=912-34-8;
+	return {pass:ok,detail:r};
+}],
+['T57','portrait is full screen: game art behind the status bar, tab bar down to the bottom edge, no black bands','P1 viewport',async()=>{
+	const g=await openGame(TARGET,{insets:{top:59,bottom:34,left:0,right:0}});
+	if (g.unsupported) return {pass:null,detail:g.unsupported};
+	await sleep(400);
+	const r=await g.page.evaluate(()=>{const at=(x,y)=>{const e=document.elementFromPoint(x,y);return e?(e.closest('#iosTabBar')?'tabBar':e.closest('#sectionLeft')?'cookiePanel':(e.id||e.tagName)):null;};
+		const W=innerWidth,H=innerHeight;return {statusBarArea:at(W/2,20),homeIndicatorArea:at(W/2,H-10),cookies:l('cookies').getBoundingClientRect().top};});
+	await g.context.close();
+	return {pass:r.statusBarArea==='cookiePanel'&&r.homeIndicatorArea==='tabBar'&&r.cookies>=58,detail:r};
 }],
 ['T28','no JavaScript errors during the whole suite','P0 stability',async()=>{
 	const g=await openGame();await sleep(2000);await g.context.close();

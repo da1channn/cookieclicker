@@ -325,15 +325,21 @@ var forceStandalone=/[?&]iosstandalone=1\b/.test(window.location.search);//test 
 var fullHeights={};//width -> tallest height seen before any keyboard (per orientation)
 var layoutSize=function(){
 	var W=window.innerWidth,H=window.innerHeight,shrunk=false;
-	if (!keyboardSeen) {fullHeights[W]=Math.max(fullHeights[W]||0,H);return {W:W,H:H,shrunk:false};}
-	if ((standalone || forceStandalone) && !textFocused() && /iPhone|iPod/.test(navigator.userAgent))
+	var iphoneApp=(standalone || forceStandalone) && /iPhone|iPod/.test(navigator.userAgent);
+	if (!keyboardSeen) fullHeights[W]=Math.max(fullHeights[W]||0,H);
+	if (iphoneApp && !textFocused())
 	{
-		var expectedH=fullHeights[W];
-		if (!expectedH && window.screen && screen.width && screen.height)
+		//an iPhone Home Screen app always fills the whole screen, but iOS 26 standalone can report
+		//innerHeight short by the status bar height (an empty band at the bottom) or stay shrunk
+		//after the keyboard; screen size (iOS: always portrait numbers) is the ground truth
+		var expectedH=0;
+		if (window.screen && screen.width && screen.height)
 		{
 			var short=Math.min(screen.width,screen.height),long=Math.max(screen.width,screen.height);
-			expectedH=(W<=short+2)?long:short;
+			if (Math.abs(W-short)<=2) expectedH=long;
+			else if (Math.abs(W-long)<=2) expectedH=short;
 		}
+		if (keyboardSeen) expectedH=Math.max(expectedH,fullHeights[W]||0);
 		if (expectedH && H<expectedH-2 && expectedH-H<500) {H=expectedH;shrunk=true;}
 	}
 	return {W:W,H:H,shrunk:shrunk};
@@ -364,10 +370,21 @@ var installLayout=function(){
 		{
 			wrapper.style.left='';
 			wrapper.style.top='';
+			wrapper.style.setProperty('--iosT','0px');
+			wrapper.style.setProperty('--iosB','0px');
 			return;
 		}
 		var scale;
-		if (portrait) scale=w/PORTRAIT_LOGICAL_W;
+		var top=ins.t;
+		if (portrait)
+		{
+			//full-bleed: the game covers the whole screen (cookie art behind the status bar, tab bar
+			//down to the bottom edge); CSS keeps the controls inside the safe area via --iosT/--iosB
+			scale=w/PORTRAIT_LOGICAL_W;
+			h=H;top=0;
+			wrapper.style.setProperty('--iosT',(ins.t/scale)+'px');
+			wrapper.style.setProperty('--iosB',(ins.b/scale)+'px');
+		}
 		else
 		{
 			//same formula as Game.resize, applied to the safe area instead of the whole window
@@ -376,13 +393,15 @@ var installLayout=function(){
 		}
 		Game.windowW=Math.floor(w/scale);
 		Game.windowH=Math.floor(h/scale);
+		if (!portrait) {wrapper.style.setProperty('--iosT','0px');wrapper.style.setProperty('--iosB','0px');}
 		wrapper.style.left=ins.l+'px';
-		wrapper.style.top=ins.t+'px';
+		wrapper.style.top=top+'px';
 		if (scale!=1)
 		{
 			wrapper.style.transform='scale('+scale+')';
-			wrapper.style.width=Game.windowW+'px';
-			wrapper.style.height=Game.windowH+'px';
+			//exact (not floored) size so no 1px strip is left at the screen edge
+			wrapper.style.width=(w/scale)+'px';
+			wrapper.style.height=(h/scale)+'px';
 		}
 		else
 		{
@@ -425,6 +444,10 @@ var TABS=[
 	{id:'legacy',icon:'👼',label:'Legacy'}
 ];
 var tr=function(s){try {return (typeof loc==='function')?loc(s):s;} catch(e){return s;}};
+Portrait.safe=function(){//safe-area insets in logical px (portrait full-bleed layout)
+	var cs=Game.wrapper?getComputedStyle(Game.wrapper):null;
+	return {t:cs?parseFloat(cs.getPropertyValue('--iosT'))||0:0,b:cs?parseFloat(cs.getPropertyValue('--iosB'))||0:0};
+};
 Portrait.buildBar=function(){
 	if (Portrait.bar) return Portrait.bar;
 	var bar=document.createElement('div');
@@ -587,7 +610,8 @@ var installPortrait=function(){
 		if (Portrait.active && this.on && this.tta.style.display!=='none')
 		{
 			var tt=this.tt,tta=this.tta;
-			var W=Game.windowW,H=Game.windowH-60;//keep clear of the tab bar
+			var safe=Portrait.safe();
+			var W=Game.windowW,H=Game.windowH-60-safe.b;//keep clear of the tab bar
 			//desktop tooltips are up to ~400px wide: shrink to fit the screen width
 			var fit=Math.min(1,(W-8)/Math.max(1,tt.offsetWidth));
 			tta.style.transformOrigin='0 0';
@@ -596,7 +620,7 @@ var installPortrait=function(){
 			var X=Math.max(4,Math.floor((W-width)/2));
 			var fingerY=Game.mouseY;
 			var Y=(fingerY>H/2)?fingerY-height-40:fingerY+40;
-			Y=Math.max(4,Math.min(H-height-4,Y));
+			Y=Math.max(safe.t+4,Math.min(H-height-4,Y));
 			tta.style.left=X+'px';tta.style.right='auto';
 			tta.style.top=Y+'px';tta.style.bottom='auto';
 			tt.style.left='0px';tt.style.top='0px';tt.style.right='auto';tt.style.bottom='auto';
@@ -615,6 +639,10 @@ var installPortrait=function(){
 			{
 				me.x=Math.floor(8+Math.random()*Math.max(0,Game.windowW-112));
 				me.l.style.left=me.x+'px';
+				//not under the Dynamic Island / status bar, not under the tab bar
+				var sf=Portrait.safe();
+				me.y=Math.max(sf.t+8,Math.min(Game.windowH-sf.b-60-104,me.y));
+				me.l.style.top=me.y+'px';
 			}
 			return r;
 		};

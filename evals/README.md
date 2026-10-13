@@ -125,3 +125,5 @@ this way so far and fixed:
 - the bakery name was cut off and the news ticker squeezed to one character per line in landscape
 - menus opened half-scrolled when switching from another scrolled menu
 | T55 | progress survives a relaunch: 60s autosave writes, relaunch restores, leaving the app saves the latest state, autosave-off is respected |
+| T56 | iPhone Air Home Screen app with innerHeight reported short by the status bar (iOS 26): game still fills to the bottom, tabs above the home indicator |
+| T57 | portrait is full screen: game art behind the status bar, tab bar down to the bottom edge |

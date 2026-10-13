@@ -238,14 +238,16 @@ const EVALS=[
 	await g.context.close();
 	return {pass:st>20&&a0===a1,detail:{scrollTop:st,bought:a0!==a1}};
 }],
-['T14','long press on a building shows its tooltip and does not buy','P2 ux',async()=>{
+['T14','long press on a building: tooltip while the finger is down, gone on release, nothing bought','P2 ux',async()=>{
 	const g=await openGame();await richGame(g);
 	const p=await center(g,'#product0');
 	const a0=await g.page.evaluate(()=>Game.ObjectsById[0].amount);
-	await tap(g,p,{hold:800});await sleep(600);
-	const r=await g.page.evaluate(()=>({amount:Game.ObjectsById[0].amount,tooltip:Game.tooltip.on}));
+	await touch(g,'touchStart',[{x:p.x,y:p.y,id:1}]);await sleep(800);
+	const during=await g.page.evaluate(()=>Game.tooltip.on);
+	await touch(g,'touchEnd',[]);await sleep(500);
+	const r=await g.page.evaluate(()=>({amount:Game.ObjectsById[0].amount,after:Game.tooltip.tta.style.display}));
 	await g.context.close();
-	return {pass:r.amount===a0&&r.tooltip===1,detail:r};
+	return {pass:r.amount===a0&&during===1&&r.after==='none',detail:{tooltipWhileHeld:during,tooltipAfterRelease:r.after,bought:r.amount-a0}};
 }],
 ['T15','portrait -> landscape -> portrait keeps layout & scale','P1 rotation',async()=>{
 	const g=await openGame();
@@ -438,22 +440,16 @@ const EVALS=[
 	const ok=Math.abs(dx-ex)<Math.abs(ex)*0.25&&Math.abs(dy-ey)<Math.abs(ey)*0.25;
 	return {pass:ok,detail:{dx:+dx.toFixed(1),dy:+dy.toFixed(1),expected:[+ex.toFixed(1),+ey.toFixed(1)]}};
 }],
-['T27','tooltip closes when touching elsewhere','P2 ux',async()=>{
+['T27','quick tap on a building buys it without flashing a tooltip over the store','P2 ux',async()=>{
 	const g=await openGame();await richGame(g);
+	await g.page.evaluate(()=>{window.__draws=0;const d=Game.tooltip.draw;Game.tooltip.draw=function(){__draws++;return d.apply(this,arguments);};});
 	const p=await center(g,'#product0');
-	await tap(g,p,{hold:800});await sleep(300);
-	const on=await g.page.evaluate(()=>Game.tooltip.on);
-	//a spot on the left panel that has no tooltip of its own
-	const left=await g.page.evaluate(()=>{const r=l('sectionLeft').getBoundingClientRect(),vv=visualViewport;
-		for (let f=0.6;f<0.98;f+=0.02){const x=r.left+r.width*0.15,y=r.top+r.height*f;const e=document.elementFromPoint(x,y);
-			if (e && !e.closest('[onmouseover],#bigCookie,.shimmer')) return {x:(x-vv.offsetLeft)*vv.scale,y:(y-vv.offsetTop)*vv.scale,el:e.id};}
-		return null;});
-	await tap(g,left);await sleep(500);
-	//Chromium's touch emulation sends a stray mouseover to (0,0) after a tap, which can open the
-	//top bar's own tooltip; what matters is that the building tooltip is gone
-	const r=await g.page.evaluate(()=>({on:Game.tooltip.on,display:Game.tooltip.tta.style.display,from:Game.tooltip.from&&Game.tooltip.from.id}));
+	const a0=await g.page.evaluate(()=>Game.ObjectsById[0].amount);
+	for (let i=0;i<3;i++){await tap(g,p,{hold:60});await sleep(250);}
+	await sleep(400);
+	const r=await g.page.evaluate(a0=>({draws:__draws,bought:Game.ObjectsById[0].amount-a0,display:Game.tooltip.tta.style.display}),a0);
 	await g.context.close();
-	return {pass:on===1&&(r.display==='none'||r.from!=='product0'),detail:{before:on,...r}};
+	return {pass:r.draws===0&&r.bought===3&&r.display!=='block',detail:r};
 }],
 ['T29','click sound starts quickly after the finger touches the cookie','P0 tap',async()=>{
 	const g=await openGame();

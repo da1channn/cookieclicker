@@ -34,7 +34,7 @@ var CONFIG={};
 })();
 
 var TAP_SLOP=10;//px of finger movement before a touch stops being a tap
-var LONG_PRESS_MS=500;//holding longer than this only shows the tooltip (no purchase)
+var LONG_PRESS_MS=400;//holding this long shows the tooltip while the finger stays down; releasing then buys nothing
 var GHOST_CLICK_MS=800;//window in which a native click after a handled tap is swallowed
 
 var docEl=document.documentElement;
@@ -171,8 +171,16 @@ if (CONFIG.fastTap && window.PointerEvent)
 			log('shimmer popped on pointerdown');
 			return;
 		}
-		taps[e.pointerId]={el:el,x:e.clientX,y:e.clientY,t:now(),moved:false};
+		var tap=taps[e.pointerId]={el:el,x:e.clientX,y:e.clientY,t:now(),moved:false,tooltip:false,timer:0};
 		if (CONFIG.layout) setMouse(e.clientX,e.clientY);
+		//tooltip only on long press (plasma4 showed it on every touchstart, so every quick purchase
+		//flashed a big tooltip over the store); it stays while the finger is down
+		if (el.id!=='bigCookie') tap.timer=setTimeout(function(){
+			if (taps[e.pointerId]!==tap || tap.moved || !gameReady()) return;
+			tap.tooltip=true;
+			el.dispatchEvent(new MouseEvent('mouseover',{bubbles:true}));//runs the element's own hover/tooltip code
+			log('long press tooltip',el.id||el.className);
+		},LONG_PRESS_MS);
 		if (el.id==='bigCookie' && gameReady()) Game.BigCookieState=1;
 		log('pointerdown',el.id||el.className,'@',e.clientX,e.clientY);
 	},true);
@@ -180,13 +188,25 @@ if (CONFIG.fastTap && window.PointerEvent)
 	document.addEventListener('pointermove',function(e){
 		var tap=taps[e.pointerId];
 		if (!tap) return;
-		if (Math.abs(e.clientX-tap.x)>TAP_SLOP || Math.abs(e.clientY-tap.y)>TAP_SLOP) tap.moved=true;
+		if (Math.abs(e.clientX-tap.x)>TAP_SLOP || Math.abs(e.clientY-tap.y)>TAP_SLOP)
+		{
+			tap.moved=true;
+			clearTimeout(tap.timer);
+			if (tap.tooltip) {closeTooltip();tap.tooltip=false;}//started scrolling: get the tooltip out of the way
+		}
 	},true);
 
+	var closeTooltip=function(){
+		if (!gameReady() || !Game.tooltip) return;
+		Game.tooltip.hide();
+		if (Game.setOnCrate) Game.setOnCrate(0);
+	};
 	var endTap=function(e){
 		var tap=taps[e.pointerId];
 		if (!tap) return null;
 		delete taps[e.pointerId];
+		clearTimeout(tap.timer);
+		if (tap.tooltip) closeTooltip();//long-press tooltip lasts as long as the finger stays down
 		if (tap.el.id==='bigCookie' && gameReady()) Game.BigCookieState=0;
 		return tap;
 	};
@@ -228,6 +248,8 @@ if (CONFIG.fastTap && window.PointerEvent)
 			if (el) touches[t.identifier]={el:el,x:t.clientX,y:t.clientY};
 			//the big cookie never needs scrolling or zooming: cancel every native gesture on it
 			if (el && el.id==='bigCookie' && e.cancelable) e.preventDefault();
+			//keep plasma4's touchstart tooltip from firing on a plain tap (the long-press timer shows it instead)
+			if (el && el.id!=='bigCookie' && e.changedTouches.length===1) e.stopPropagation();
 		}
 	},{capture:true,passive:false});
 	document.addEventListener('touchmove',function(e){

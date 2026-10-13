@@ -69,7 +69,7 @@ html.embed body{padding-top:12px;}
 <h1><img src="img/ios/apple-touch-icon.png" alt="">遊び方（iPhone版）</h1>
 <p class="lead">このページは、ゲーム内の左上にある <kbd>📖 遊び方</kbd> ボタンからいつでも開けます。</p>
 <nav class="toc">
-	<a href="#ja-screen">画面</a><a href="#ja-touch">タッチ操作</a><a href="#ja-store">ショップ</a><a href="#ja-mini">ミニゲーム</a><a href="#ja-ascend">昇天</a><a href="#ja-save">セーブ</a><a href="#ja-trouble">困ったとき</a>
+	<a href="#ja-screen">画面</a><a href="#ja-touch">タッチ操作</a><a href="#ja-store">ショップ</a><a href="#ja-mini">ミニゲーム</a><a href="#ja-ascend">昇天</a><a href="#ja-save">セーブ</a><a href="#ja-idle">放置</a><a href="#ja-trouble">困ったとき</a>
 </nav>
 
 <h2 id="ja-screen">画面の見方（縦向き）</h2>
@@ -151,6 +151,13 @@ html.embed body{padding-top:12px;}
 <ol><li>Safariでこのゲームを開く</li><li>共有ボタン →「ホーム画面に追加」</li><li>「Webアプリとして開く」がオンのまま追加</li></ol>
 <p>一度ネットにつないで起動しておくと、次からは機内モードでも遊べます。</p>
 
+<h2 id="ja-idle">放置について</h2>
+<ul>
+<li><b>バックグラウンド中も生産:</b> ホームに戻ったり画面をロックしている間、iPhoneはゲームを止めますが、戻ったときに止まっていた時間ぶんを毎秒の生産量で焼き上げます（PCでタブを開いたまま放置したのと同じ）。一時的なブーストは含みません。</li>
+<li><b>閉じている間も生産:</b> アプリを閉じていた（またはiPhoneに終了された）間は、公式モバイル版と同じく毎秒の 5%（1時間まで、それ以降は 0.5%）を受け取れます。天国のアップグレード「超越の双門」以降を持っていれば、ゲーム本来のもっと良い計算が使われます。</li>
+<li>どちらも ⚙️ オプション の「iPhone版の放置設定」でオン／オフできます。</li>
+</ul>
+
 <h2 id="ja-trouble">困ったとき</h2>
 <ul>
 <li><b>表示がずれた</b>：iPhoneを一度横にしてから縦に戻す。直らなければアプリを閉じて開き直す。</li>
@@ -166,7 +173,7 @@ html.embed body{padding-top:12px;}
 <h1><img src="img/ios/apple-touch-icon.png" alt="">How to play on iPhone</h1>
 <p class="lead">You can open this page any time from the <kbd>📖 Help</kbd> button at the top left of the game.</p>
 <nav class="toc">
-	<a href="#en-screen">Screen</a><a href="#en-touch">Touch</a><a href="#en-store">Store</a><a href="#en-mini">Minigames</a><a href="#en-ascend">Ascend</a><a href="#en-save">Saves</a><a href="#en-trouble">Help</a>
+	<a href="#en-screen">Screen</a><a href="#en-touch">Touch</a><a href="#en-store">Store</a><a href="#en-mini">Minigames</a><a href="#en-ascend">Ascend</a><a href="#en-save">Saves</a><a href="#en-idle">Idle</a><a href="#en-trouble">Help</a>
 </nav>
 
 <h2 id="en-screen">The screen (portrait)</h2>
@@ -231,6 +238,13 @@ html.embed body{padding-top:12px;}
 <h3>Add to Home Screen</h3>
 <ol><li>Open the game in Safari.</li><li>Tap Share → "Add to Home Screen".</li><li>Leave "Open as Web App" on and tap Add.</li></ol>
 <p>Open it once while you're online; after that it also works in Airplane Mode.</p>
+
+<h2 id="en-idle">Idle progress</h2>
+<ul>
+<li><b>Bake in the background:</b> iOS pauses the game while you are on the Home Screen or the phone is locked. When you come back, the paused time is baked at your normal CpS, like an open tab on a computer. Temporary boosts are not included.</li>
+<li><b>Bake while closed:</b> while the app was closed (or iOS closed it), you earn 5% of your CpS for up to an hour, then 0.5%, like the official mobile app. With the heavenly upgrade Twin Gates of Transcendence, the game's own, better rule applies.</li>
+<li>Both can be switched off in ⚙️ Options → "iPhone idle settings".</li>
+</ul>
 
 <h2 id="en-trouble">If something is off</h2>
 <ul>
